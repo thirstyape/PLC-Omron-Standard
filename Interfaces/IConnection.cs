@@ -11,6 +11,16 @@
         bool IsConnected { get; }
 
         /// <summary>
+        /// Stores the remote node address for communication
+        /// </summary>
+        byte RemoteNode { get; }
+
+        /// <summary>
+        /// Stores the local node address for communication
+        /// </summary>
+        byte LocalNode { get; }
+
+        /// <summary>
 		/// Opens a connection with the PLC
 		/// </summary>
 		bool Connect();
@@ -19,6 +29,12 @@
         /// Closes the connection with the PLC
         /// </summary>
         bool Disconnect();
+
+        /// <summary>
+        /// Sends the provided packet to the PLC
+        /// </summary>
+        /// <param name="packet">The packet to send</param>
+        bool SendData(IFinsPacket packet);
 
         /// <summary>
         /// Sends the provided data to the PLC

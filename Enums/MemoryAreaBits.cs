@@ -6,7 +6,7 @@
     public enum MemoryAreaBits : byte
     {
         /// <summary>
-        /// 
+        /// Accesses the main data area
         /// </summary>
         DataMemory = 0x82,
 

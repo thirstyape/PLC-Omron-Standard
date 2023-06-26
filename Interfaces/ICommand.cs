@@ -8,21 +8,21 @@ namespace PLC_Omron_Standard.Interfaces
     internal interface ICommand
     {
         /// <summary>
-        /// 
+        /// Reads information from a memory area on the PLC
         /// </summary>
-        /// <param name="bit"></param>
-        /// <param name="address"></param>
-        /// <param name="position"></param>
-        /// <param name="length"></param>
+        /// <param name="bit">The area to read from</param>
+        /// <param name="address">The specific item to read</param>
+        /// <param name="position">The position within the address to read</param>
+        /// <param name="length">The total amount of data to read</param>
         byte[] MemoryAreaRead(MemoryAreaBits bit, ushort address, byte position, ushort length);
 
         /// <summary>
-        /// 
+        /// Writes information to a memory area on the PLC
         /// </summary>
-        /// <param name="bit"></param>
-        /// <param name="address"></param>
-        /// <param name="position"></param>
-        /// <param name="data"></param>
+        /// <param name="bit">The area to write to</param>
+        /// <param name="address">The specific item to write</param>
+        /// <param name="position">The position within the address to write</param>
+        /// <param name="data">The content to write</param>
         bool MemoryAreaWrite(MemoryAreaBits bit, ushort address, byte position, byte[] data);
     }
 }

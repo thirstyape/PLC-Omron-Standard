@@ -1,5 +1,8 @@
-﻿using PLC_Omron_Standard.Interfaces;
+﻿using PLC_Omron_Standard.Enums;
+using PLC_Omron_Standard.Interfaces;
+using PLC_Omron_Standard.Models;
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 
@@ -27,23 +30,48 @@ namespace PLC_Omron_Standard.Tools
 
         ~TcpConnection()
         {
-            if (Socket != null)
-            {
-                Disconnect();
-                Socket.Dispose();
-            }
+            Disconnect();
+            Socket.Dispose();
         }
 
         /// <inheritdoc/>
-        public bool IsConnected => Socket?.Connected ?? false;
+        public bool IsConnected => Socket.Connected;
+
+        /// <inheritdoc/>
+        public byte RemoteNode { get; private set; }
+
+        /// <inheritdoc/>
+        public byte LocalNode { get; private set; }
 
         /// <inheritdoc/>
         public bool Connect()
         {
             try
             {
+                // Connect
                 Socket.Connect(Endpoint);
-                return IsConnected;
+
+                if (IsConnected == false)
+                    return false;
+
+                // Get node id values
+                var packet = new TcpPacket(TcpPacketTypes.ClientToPlc, 0x00, 0x00)
+                {
+                    Parameters = new byte[] { 0x00, 0x00, 0x00, 0x00 }
+                };
+
+                if (SendData(packet) == false)
+                    return false;
+
+                var response = ReceiveData(24);
+
+                if (response.Length < 24)
+                    return false;
+
+                RemoteNode = response[23];
+                LocalNode = response[19];
+
+                return true;
             }
             catch
             {
@@ -54,7 +82,7 @@ namespace PLC_Omron_Standard.Tools
         /// <inheritdoc/>
         public bool Disconnect()
         {
-            if (Socket == null || IsConnected == false)
+            if (IsConnected == false)
                 return true;
 
             try
@@ -79,15 +107,18 @@ namespace PLC_Omron_Standard.Tools
             try
             {
                 var response = new byte[length];
+                var received = Socket.Receive(response, length, SocketFlags.None);
 
-                Socket.Receive(response, length, SocketFlags.None);
-                return response;
+                return response.Take(received).ToArray();
             }
             catch
             {
                 return Array.Empty<byte>();
             }
         }
+
+        /// <inheritdoc/>
+        public bool SendData(IFinsPacket packet) => SendData(packet.ToArray());
 
         /// <inheritdoc/>
         public bool SendData(byte[] data)

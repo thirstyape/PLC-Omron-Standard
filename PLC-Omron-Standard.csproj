@@ -1,12 +1,12 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
 	  <RootNamespace>$(MSBuildProjectName.Replace("-", "_"))</RootNamespace>
-	  <Company>The Thirsty Ape</Company>
-	  <Copyright>Copyright 2023 The Thirsty Ape</Copyright>
+	  <Copyright>Copyright 2023 $(Company)</Copyright>
+	  <Company>NF Software Inc.</Company>
 	  <Authors>Nathanael Frey</Authors>
-	  <PackageTags>plc omron</PackageTags>
+	  <PackageTags>plc omron communication</PackageTags>
 	  <Description>
 		  This project was created to have an easy to use, .NET Standard library to communicate with Omron PLCs.
 	  </Description>
@@ -21,4 +21,10 @@
 	  <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
+	<ItemGroup>
+		<None Include="LICENSE">
+			<Pack>True</Pack>
+			<PackagePath></PackagePath>
+		</None>
+	</ItemGroup>
 </Project>

@@ -1,5 +1,9 @@
 ﻿using PLC_Omron_Standard.Enums;
 using PLC_Omron_Standard.Interfaces;
+using PLC_Omron_Standard.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace PLC_Omron_Standard.Tools
 {
@@ -18,13 +22,59 @@ namespace PLC_Omron_Standard.Tools
         /// <inheritdoc/>
         public byte[] MemoryAreaRead(MemoryAreaBits bit, ushort address, byte position, ushort length)
         {
-            throw new System.NotImplementedException();
+            if (Connection.IsConnected == false)
+                return Array.Empty<byte>();
+
+            var parameters = new List<byte>
+            {
+                (byte)bit
+            };
+
+            parameters.AddRange(BitConverter.GetBytes(address).Reverse());
+            parameters.Add(position);
+            parameters.AddRange(BitConverter.GetBytes(length).Reverse());
+
+            var packet = new UdpPacket(Connection.RemoteNode, Connection.LocalNode)
+            {
+                MC = (byte)PlcFunctions.MemoryArea,
+                SC = (byte)MemoryAreaSubfunctions.Read,
+                Parameters = parameters.ToArray()
+            };
+
+            if (Connection.SendData(packet) == false)
+                return Array.Empty<byte>();
+
+            return Connection.ReceiveData(4_096);
         }
 
         /// <inheritdoc/>
         public bool MemoryAreaWrite(MemoryAreaBits bit, ushort address, byte position, byte[] data)
         {
-            throw new System.NotImplementedException();
+            if (Connection.IsConnected == false)
+                return false;
+
+            var parameters = new List<byte>
+            {
+                (byte)bit
+            };
+
+            parameters.AddRange(BitConverter.GetBytes(address).Reverse());
+            parameters.Add(position);
+            parameters.AddRange(BitConverter.GetBytes(data.Length).Reverse());
+
+            var packet = new UdpPacket(Connection.RemoteNode, Connection.LocalNode)
+            {
+                MC = (byte)PlcFunctions.MemoryArea,
+                SC = (byte)MemoryAreaSubfunctions.Write,
+                Parameters = parameters.ToArray(),
+                Data = data
+            };
+
+            if (Connection.SendData(packet) == false)
+                return false;
+
+            var response = Connection.ReceiveData(2_048);
+            return response.Length > 0;
         }
     }
 }

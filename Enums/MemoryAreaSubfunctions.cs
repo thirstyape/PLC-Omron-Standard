@@ -6,12 +6,12 @@
     public enum MemoryAreaSubfunctions : byte
     {
         /// <summary>
-        /// 
+        /// Reads information from a memory area
         /// </summary>
         Read = 0x01,
 
         /// <summary>
-        /// 
+        /// Writes information to a memory area
         /// </summary>
         Write = 0x02,
 

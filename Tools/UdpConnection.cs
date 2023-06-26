@@ -1,5 +1,6 @@
 ﻿using PLC_Omron_Standard.Interfaces;
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 
@@ -35,7 +36,13 @@ namespace PLC_Omron_Standard.Tools
         }
 
         /// <inheritdoc/>
-        public bool IsConnected => Socket?.Connected ?? false;
+        public bool IsConnected => Socket.Connected;
+
+        /// <inheritdoc/>
+        public byte RemoteNode { get; private set; }
+
+        /// <inheritdoc/>
+        public byte LocalNode { get; private set; }
 
         /// <inheritdoc/>
         public bool Connect()
@@ -54,7 +61,7 @@ namespace PLC_Omron_Standard.Tools
         /// <inheritdoc/>
         public bool Disconnect()
         {
-            if (Socket == null || IsConnected == false)
+            if (IsConnected == false)
                 return true;
 
             try
@@ -79,15 +86,18 @@ namespace PLC_Omron_Standard.Tools
             try
             {
                 var response = new byte[length];
+                var received = Socket.Receive(response, length, SocketFlags.None);
 
-                Socket.Receive(response, length, SocketFlags.None);
-                return response;
+                return response.Take(received).ToArray();
             }
             catch
             {
                 return Array.Empty<byte>();
             }
         }
+
+        /// <inheritdoc/>
+        public bool SendData(IFinsPacket packet) => SendData(packet.ToArray());
 
         /// <inheritdoc/>
         public bool SendData(byte[] data)

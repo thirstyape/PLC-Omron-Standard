@@ -20,7 +20,24 @@ To use this library either clone a copy of the repository or check out the [NuGe
 The following example provides a complete use case. This example makes use of the most basic configuration.
 
 ```
+using PLC_Omron_Standard;
 
+public class MyClass() 
+{
+    public bool Test() 
+    {
+        // Create PLC connection
+        var plc = new PlcOmron("192.168.1.100");
+
+        plc.Connect();
+
+        // Read data
+        var data = plc.Read(123, 10);
+
+        // Write data
+        return data.Length > 0 && plc.Write(123, "Hello!");
+    }
+}
 ```
 
 ## Authors
