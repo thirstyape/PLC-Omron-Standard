@@ -73,6 +73,140 @@ namespace PLC_Omron_Standard
         }
 
         /// <summary>
+        /// Reads data from the PLC and converts the result to a <see cref="bool"/>
+        /// </summary>
+        /// <param name="address">The specific item to read</param>
+        public bool ReadBool(ushort address)
+        {
+            return BitConverter.ToBoolean(Read(address, 1), 0);
+        }
+
+        /// <summary>
+        /// Reads data from the PLC and converts the result to a <see cref="short"/>
+        /// </summary>
+        /// <param name="address">The specific item to read</param>
+        public short ReadShort(ushort address)
+        {
+            return BitConverter.ToInt16(Read(address, 2), 0);
+        }
+
+        /// <summary>
+        /// Reads data from the PLC and converts the result to a <see cref="ushort"/>
+        /// </summary>
+        /// <param name="address">The specific item to read</param>
+        public ushort ReadUShort(ushort address)
+        {
+            return BitConverter.ToUInt16(Read(address, 2), 0);
+        }
+
+        /// <summary>
+        /// Reads data from the PLC and converts the result to a <see cref="int"/>
+        /// </summary>
+        /// <param name="address">The specific item to read</param>
+        public int ReadInt(ushort address)
+        {
+            return BitConverter.ToInt32(Read(address, 4), 0);
+        }
+
+        /// <summary>
+        /// Reads data from the PLC and converts the result to a <see cref="uint"/>
+        /// </summary>
+        /// <param name="address">The specific item to read</param>
+        public uint ReadUInt(ushort address)
+        {
+            return BitConverter.ToUInt32(Read(address, 4), 0);
+        }
+
+        /// <summary>
+        /// Reads data from the PLC and converts the result to a <see cref="float"/>
+        /// </summary>
+        /// <param name="address">The specific item to read</param>
+        public float ReadFloat(ushort address)
+        {
+            return BitConverter.ToSingle(Read(address, 4), 0);
+        }
+
+        /// <summary>
+        /// Reads data from the PLC and converts the result to a <see cref="string"/>
+        /// </summary>
+        /// <param name="address">The specific item to read</param>
+        /// <param name="length">The total amount of data to read</param>
+        public string ReadString(ushort address, ushort length)
+        {
+            return Encoding.ASCII.GetString(Read(address, length));
+        }
+
+        /// <summary>
+        /// Reads data from the PLC and converts the result to a <see cref="bool"/> array
+        /// </summary>
+        /// <param name="address">The specific item to read</param>
+        /// <param name="length">The total amount of data to read</param>
+        public bool[] ReadBoolArray(ushort address, ushort length)
+        {
+            return Read(address, length).Select(x => BitConverter.ToBoolean(new byte[] { x }, 0)).ToArray();
+        }
+
+        /// <summary>
+        /// Reads data from the PLC and converts the result to a <see cref="short"/> array
+        /// </summary>
+        /// <param name="address">The specific item to read</param>
+        /// <param name="length">The total amount of data to read</param>
+        public short[] ReadShortArray(ushort address, ushort length)
+        {
+            return Read(address, length).Partition(2, false).Select(x => BitConverter.ToInt16(x, 0)).ToArray();
+        }
+
+        /// <summary>
+        /// Reads data from the PLC and converts the result to a <see cref="ushort"/> array
+        /// </summary>
+        /// <param name="address">The specific item to read</param>
+        /// <param name="length">The total amount of data to read</param>
+        public ushort[] ReadUShortArray(ushort address, ushort length)
+        {
+            return Read(address, length).Partition(2, false).Select(x => BitConverter.ToUInt16(x, 0)).ToArray();
+        }
+
+        /// <summary>
+        /// Reads data from the PLC and converts the result to a <see cref="int"/> array
+        /// </summary>
+        /// <param name="address">The specific item to read</param>
+        /// <param name="length">The total amount of data to read</param>
+        public int[] ReadIntArray(ushort address, ushort length)
+        {
+            return Read(address, length).Partition(4, false).Select(x => BitConverter.ToInt32(x, 0)).ToArray();
+        }
+
+        /// <summary>
+        /// Reads data from the PLC and converts the result to a <see cref="uint"/> array
+        /// </summary>
+        /// <param name="address">The specific item to read</param>
+        /// <param name="length">The total amount of data to read</param>
+        public uint[] ReadUIntArray(ushort address, ushort length)
+        {
+            return Read(address, length).Partition(4, false).Select(x => BitConverter.ToUInt32(x, 0)).ToArray();
+        }
+
+        /// <summary>
+        /// Reads data from the PLC and converts the result to a <see cref="float"/> array
+        /// </summary>
+        /// <param name="address">The specific item to read</param>
+        /// <param name="length">The total amount of data to read</param>
+        public float[] ReadFloatArray(ushort address, ushort length)
+        {
+            return Read(address, length).Partition(4, false).Select(x => BitConverter.ToSingle(x, 0)).ToArray();
+        }
+
+        /// <summary>
+        /// Reads data from the PLC and converts the result to a <see cref="string"/> array
+        /// </summary>
+        /// <param name="address">The specific item to read</param>
+        /// <param name="length">The total amount of data to read</param>
+        public string[] ReadStringArray(ushort address, ushort length)
+        {
+            return Encoding.ASCII.GetString(Read(address, length)).Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None);
+        }
+
+        /// <summary>
         /// Writes the provided value to the PLC
         /// </summary>
         /// <param name="address">The address on the PLC to write to</param>
