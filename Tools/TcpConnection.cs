@@ -106,7 +106,7 @@ namespace PLC_Omron_Standard.Tools
 
             try
             {
-                var response = new byte[length];
+                var response = new byte[4_096];
                 var received = Socket.Receive(response, length, SocketFlags.None);
 
                 return response.Take(received).ToArray();

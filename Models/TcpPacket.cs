@@ -28,7 +28,7 @@ namespace PLC_Omron_Standard.Models
         /// </summary>
         private IEnumerable<byte> PacketLength => CommandType == TcpPacketTypes.Fins ?
             BitConverter.GetBytes(Convert.ToUInt32(TcpLength + FinsLength + Parameters.Length + Data.Length)).Reverse() :
-            BitConverter.GetBytes(Convert.ToUInt32(TcpLength + Parameters.Length)).Reverse();
+            BitConverter.GetBytes(Convert.ToUInt32(12)).Reverse();
 
         /// <summary>
         /// Returns the command type to issue to the PLC

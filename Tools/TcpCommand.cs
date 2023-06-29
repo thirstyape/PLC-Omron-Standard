@@ -44,7 +44,13 @@ namespace PLC_Omron_Standard.Tools
             if (Connection.SendData(packet) == false)
                 return Array.Empty<byte>();
 
-            return Connection.ReceiveData(4_096).Skip(16).ToArray();
+            var header = Connection.ReceiveData(16);
+
+            if (header.Length < 16)
+				return Array.Empty<byte>();
+
+            var amount = BitConverter.ToUInt16(new byte[] { header[6], header[7] }.Reverse().ToArray(), 0);
+			return Connection.ReceiveData(amount + 14).Skip(14).ToArray();
         }
 
         /// <inheritdoc/>
@@ -73,7 +79,7 @@ namespace PLC_Omron_Standard.Tools
             if (Connection.SendData(packet) == false)
                 return false;
 
-            var response = Connection.ReceiveData(2_048);
+            var response = Connection.ReceiveData(16);
             return response.Length >= 16 && response.Take(4).SequenceEqual(packet.FinsHeader);
         }
     }
