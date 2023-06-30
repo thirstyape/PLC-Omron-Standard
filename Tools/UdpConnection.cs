@@ -1,118 +1,123 @@
 ﻿using PLC_Omron_Standard.Interfaces;
 using System;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 
 namespace PLC_Omron_Standard.Tools
 {
-    /// <summary>
-    /// Implementation of <see cref="IConnection"/> to facilitate UDP based connections
-    /// </summary>
-    internal class UdpConnection : IConnection
-    {
-        private const int CommandTimeoutMs = 2_000;
-        private readonly Socket Socket;
-        private readonly IPEndPoint Endpoint;
+	/// <summary>
+	/// Implementation of <see cref="IConnection"/> to facilitate UDP based connections
+	/// </summary>
+	internal class UdpConnection : IConnection
+	{
+		private const int CommandTimeoutMs = 2_000;
+		private readonly UdpClient Client;
+		private IPEndPoint Endpoint;
 
-        public UdpConnection(IPAddress ip, int port)
-        {
-            Endpoint = new IPEndPoint(ip, port);
+		public UdpConnection(IPAddress ip, int port, byte remoteNode, byte localNode)
+		{
+			Endpoint = new IPEndPoint(ip, port);
 
-            Socket = new Socket(Endpoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp)
-            {
-                ReceiveTimeout = CommandTimeoutMs,
-                SendTimeout = CommandTimeoutMs
-            };
-        }
+			Client = new UdpClient();
 
-        ~UdpConnection()
-        {
-            if (Socket != null)
-            {
-                Disconnect();
-                Socket.Dispose();
-            }
-        }
+			Client.Client.SendTimeout = CommandTimeoutMs;
+			Client.Client.ReceiveTimeout = CommandTimeoutMs;
 
-        /// <inheritdoc/>
-        public bool IsConnected => Socket.Connected;
+			RemoteNode = remoteNode;
+			LocalNode = localNode;
+		}
 
-        /// <inheritdoc/>
-        public byte RemoteNode { get; private set; }
+		~UdpConnection()
+		{
+			Disconnect();
+			Client.Dispose();
+		}
 
-        /// <inheritdoc/>
-        public byte LocalNode { get; private set; }
+		/// <inheritdoc/>
+		public event SentData NotifySentData;
 
-        /// <inheritdoc/>
-        public bool Connect()
-        {
-            try
-            {
-                Socket.Connect(Endpoint);
-                return IsConnected;
-            }
-            catch
-            {
-                return false;
-            }
-        }
+		/// <inheritdoc/>
+		public event ReceivedData NotifyReceivedData;
 
-        /// <inheritdoc/>
-        public bool Disconnect()
-        {
-            if (IsConnected == false)
-                return true;
+		/// <inheritdoc/>
+		public bool IsConnected => Client?.Client?.Connected ?? false;
 
-            try
-            {
-                Socket.Shutdown(SocketShutdown.Both);
-                Socket.Close();
+		/// <inheritdoc/>
+		public byte RemoteNode { get; private set; }
 
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-        }
+		/// <inheritdoc/>
+		public byte LocalNode { get; private set; }
 
-        /// <inheritdoc/>
-        public byte[] ReceiveData(int length)
-        {
-            if (IsConnected == false)
-                return Array.Empty<byte>();
+		/// <inheritdoc/>
+		public bool Connect()
+		{
+			try
+			{
+				Client.Connect(Endpoint);
+				return IsConnected;
+			}
+			catch
+			{
+				return false;
+			}
+		}
 
-            try
-            {
-                var response = new byte[length];
-                var received = Socket.Receive(response, length, SocketFlags.None);
+		/// <inheritdoc/>
+		public bool Disconnect()
+		{
+			if (IsConnected == false)
+				return true;
 
-                return response.Take(received).ToArray();
-            }
-            catch
-            {
-                return Array.Empty<byte>();
-            }
-        }
+			try
+			{
+				Client.Close();
+				return true;
+			}
+			catch
+			{
+				return false;
+			}
+		}
 
-        /// <inheritdoc/>
-        public bool SendData(IFinsPacket packet) => SendData(packet.ToArray());
+		/// <inheritdoc/>
+		public byte[] ReceiveData(int length)
+		{
+			if (IsConnected == false)
+				return Array.Empty<byte>();
 
-        /// <inheritdoc/>
-        public bool SendData(byte[] data)
-        {
-            if (IsConnected == false)
-                return false;
+			try
+			{
+				var received = Client.Receive(ref Endpoint);
+				NotifyReceivedData?.Invoke(received);
 
-            try
-            {
-                return Socket.Send(data, data.Length, SocketFlags.None) == data.Length;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-    }
+				return received;
+			}
+			catch
+			{
+				return Array.Empty<byte>();
+			}
+		}
+
+		/// <inheritdoc/>
+		public bool SendData(IFinsPacket packet) => SendData(packet.ToArray());
+
+		/// <inheritdoc/>
+		public bool SendData(byte[] data)
+		{
+			if (IsConnected == false)
+				return false;
+
+			try
+			{
+				var sent = Client.Send(data, data.Length);
+				NotifySentData?.Invoke(data);
+
+				return sent == data.Length;
+			}
+			catch
+			{
+				return false;
+			}
+		}
+	}
 }

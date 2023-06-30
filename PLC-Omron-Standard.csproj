@@ -6,22 +6,28 @@
 	  <Copyright>Copyright 2023 $(Company)</Copyright>
 	  <Company>NF Software Inc.</Company>
 	  <Authors>Nathanael Frey</Authors>
-	  <PackageTags>plc omron communication</PackageTags>
+	  <PackageTags>plc omron communication TCP UDP events</PackageTags>
 	  <Description>
 		  This project was created to have an easy to use, .NET Standard library to communicate with Omron PLCs.
 	  </Description>
 	  <PackageLicenseFile>LICENSE</PackageLicenseFile>
 	  <PackageId>Plc.Omron.Standard</PackageId>
 	  <RepositoryUrl>https://github.com/thirstyape/PLC-Omron-Standard</RepositoryUrl>
-	  <Version>1.0.1</Version>
+	  <Version>1.0.3</Version>
 	  <PackageReleaseNotes>
+		  1.0.3
+		  Add events, update UDP connection, bugfixes
+		  
+		  1.0.2
+		  Bugfixes
+		  
 		  1.0.1
 		  Add typed public read methods
 		  
 		  1.0.0
 		  Initial release
 	  </PackageReleaseNotes>
-	  <AssemblyVersion>1.0.1.0</AssemblyVersion>
+	  <AssemblyVersion>1.0.3.0</AssemblyVersion>
   </PropertyGroup>
 
 	<ItemGroup>

@@ -19,11 +19,17 @@ namespace PLC_Omron_Standard.Tools
             Connection = connection;
         }
 
-        /// <inheritdoc/>
-        public byte[] MemoryAreaRead(MemoryAreaBits bit, ushort address, byte position, ushort length)
+		/// <inheritdoc/>
+		public event CommandError NotifyCommandError;
+
+		/// <inheritdoc/>
+		public byte[] MemoryAreaRead(MemoryAreaBits bit, ushort address, byte position, ushort length)
         {
             if (Connection.IsConnected == false)
-                return Array.Empty<byte>();
+            {
+				NotifyCommandError?.Invoke("PLC is not connected");
+				return Array.Empty<byte>();
+			}
 
             var parameters = new List<byte>
             {
@@ -42,22 +48,38 @@ namespace PLC_Omron_Standard.Tools
             };
 
             if (Connection.SendData(packet) == false)
-                return Array.Empty<byte>();
+            {
+				NotifyCommandError?.Invoke("Failed to request data from PLC for memory area read");
+				return Array.Empty<byte>();
+			}
 
             var header = Connection.ReceiveData(16);
 
             if (header.Length < 16)
+            {
+				NotifyCommandError?.Invoke("Failed reading from PLC memory area");
 				return Array.Empty<byte>();
+			}
 
-            var amount = BitConverter.ToUInt16(new byte[] { header[6], header[7] }.Reverse().ToArray(), 0);
-			return Connection.ReceiveData(amount + 14).Skip(14).ToArray();
+            var available = BitConverter.ToUInt16(new byte[] { header[6], header[7] }.Reverse().ToArray(), 0);
+            var data = Connection.ReceiveData(available + 14);
+
+            if (data[12] != 0 && ResponseCodesDictionary.IsError(data[12]))
+                NotifyCommandError?.Invoke(ResponseCodesDictionary.GetCodeMessage(data[12]));
+            else if (data[13] != 0 && ResponseCodesDictionary.IsError(data[13]))
+				NotifyCommandError?.Invoke(ResponseCodesDictionary.GetCodeMessage(data[13]));
+
+			return data.Skip(14).ToArray();
         }
 
         /// <inheritdoc/>
-        public bool MemoryAreaWrite(MemoryAreaBits bit, ushort address, byte position, byte[] data)
+        public bool MemoryAreaWrite(MemoryAreaBits bit, ushort address, byte position, ushort count, byte[] data)
         {
             if (Connection.IsConnected == false)
-                return false;
+            {
+				NotifyCommandError?.Invoke("PLC is not connected");
+				return false;
+			};
 
             var parameters = new List<byte>
             {
@@ -66,7 +88,7 @@ namespace PLC_Omron_Standard.Tools
 
             parameters.AddRange(BitConverter.GetBytes(address).Reverse());
             parameters.Add(position);
-            parameters.AddRange(BitConverter.GetBytes(data.Length).Reverse());
+            parameters.AddRange(BitConverter.GetBytes(count).Reverse());
 
             var packet = new TcpPacket(TcpPacketTypes.Fins, Connection.RemoteNode, Connection.LocalNode)
             {
@@ -77,10 +99,36 @@ namespace PLC_Omron_Standard.Tools
             };
 
             if (Connection.SendData(packet) == false)
-                return false;
+            {
+				NotifyCommandError?.Invoke("Failed writing to PLC memory area");
+				return false;
+			}
 
             var response = Connection.ReceiveData(16);
-            return response.Length >= 16 && response.Take(4).SequenceEqual(packet.FinsHeader);
-        }
+
+			if (response.Length < 30)
+            {
+				NotifyCommandError?.Invoke("Failed to receive response from PLC for memory area write");
+				return false;
+			}
+            else if (response.Take(4).SequenceEqual(packet.FinsHeader) == false)
+            {
+				NotifyCommandError?.Invoke("TCP FINS header from PLC for memory area write was invalid");
+				return false;
+			}
+
+			if (response[28] != 0 && ResponseCodesDictionary.IsError(response[28]))
+			{
+				NotifyCommandError?.Invoke(ResponseCodesDictionary.GetCodeMessage(response[28]));
+				return false;
+			}
+			else if (response[29] != 0 && ResponseCodesDictionary.IsError(response[29]))
+			{
+				NotifyCommandError?.Invoke(ResponseCodesDictionary.GetCodeMessage(response[29]));
+				return false;
+			}
+
+			return true;
+		}
     }
 }

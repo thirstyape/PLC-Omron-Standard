@@ -8,15 +8,24 @@ using System.Text;
 
 namespace PLC_Omron_Standard
 {
-    /// <summary>
-    /// Main class to communicate with Omron PLCs
-    /// </summary>
-    public class PlcOmron
+	/// <summary>
+	/// Main class to communicate with Omron PLCs
+	/// </summary>
+	public class PlcOmron
     {
         private readonly IConnection Connection;
         private readonly ICommand Command;
 
-        public PlcOmron(string ip, int port = 9_600, bool useTcp = true)
+		/// <summary>
+		/// Prepares the class for communications with a PLC
+		/// </summary>
+		/// <param name="ip">The IP address of the PLC</param>
+		/// <param name="port">The port the PLC uses for FINS communication</param>
+		/// <param name="useTcp">Spcifies whether to use TCP or UDP communication</param>
+		/// <param name="remoteNode">The remote node ID to communicate with the PLC (only required for UDP)</param>
+		/// <param name="localNode">The local node ID to communicate with the PLC (only required for UDP)</param>
+		/// <exception cref="ArgumentException"></exception>
+		public PlcOmron(string ip, int port = 9_600, bool useTcp = true, byte remoteNode = 0, byte localNode = 0)
         {
             var address = IPAddress.Parse(ip);
 
@@ -27,12 +36,30 @@ namespace PLC_Omron_Standard
             }
             else
             {
-                Connection = new UdpConnection(address, port);
+				if (localNode <= 0)
+					throw new ArgumentException("Must specify local node for UDP connections", nameof(localNode));
+				else if (remoteNode <= 0)
+					throw new ArgumentException("Must specify remote node for UDP connections", nameof(remoteNode));
+
+				Connection = new UdpConnection(address, port, remoteNode, localNode);
                 Command = new UdpCommand(Connection);
             }
+
+			Connection.NotifyReceivedData += Connection_NotifyReceivedData;
+			Connection.NotifySentData += Connection_NotifySentData;
+			Command.NotifyCommandError += Command_NotifyCommandError;
         }
 
-        public PlcOmron(IPAddress ip, int port = 9_600, bool useTcp = true)
+		/// <summary>
+		/// Prepares the class for communications with a PLC
+		/// </summary>
+		/// <param name="ip">The IP address of the PLC</param>
+		/// <param name="port">The port the PLC uses for FINS communication</param>
+		/// <param name="useTcp">Spcifies whether to use TCP or UDP communication</param>
+		/// <param name="remoteNode">The remote node ID to communicate with the PLC (only required for UDP)</param>
+		/// <param name="localNode">The local node ID to communicate with the PLC (only required for UDP)</param>
+		/// <exception cref="ArgumentException"></exception>
+		public PlcOmron(IPAddress ip, int port = 9_600, bool useTcp = true, byte remoteNode = 0, byte localNode = 0)
         {
             if (useTcp)
             {
@@ -41,14 +68,27 @@ namespace PLC_Omron_Standard
             }
             else
             {
-                Connection = new UdpConnection(ip, port);
+                if (localNode <= 0)
+                    throw new ArgumentException("Must specify local node for UDP connections", nameof(localNode));
+                else if (remoteNode <= 0)
+                    throw new ArgumentException("Must specify remote node for UDP connections", nameof(remoteNode));
+
+                Connection = new UdpConnection(ip, port, remoteNode, localNode);
                 Command = new UdpCommand(Connection);
             }
-        }
+
+			Connection.NotifyReceivedData += Connection_NotifyReceivedData;
+			Connection.NotifySentData += Connection_NotifySentData;
+			Command.NotifyCommandError += Command_NotifyCommandError;
+		}
 
         ~PlcOmron()
         {
-            if (Connection.IsConnected)
+			Connection.NotifyReceivedData -= Connection_NotifyReceivedData;
+			Connection.NotifySentData -= Connection_NotifySentData;
+			Command.NotifyCommandError -= Command_NotifyCommandError;
+
+			if (Connection.IsConnected)
                 Connection.Disconnect();
         }
 
@@ -62,22 +102,49 @@ namespace PLC_Omron_Standard
         /// </summary>
         public bool Disconnect() => Connection.IsConnected == false || Connection.Disconnect();
 
-        /// <summary>
-        /// Reads data from the PLC
-        /// </summary>
-        /// <param name="address">The specific item to read</param>
-        /// <param name="items">The total number of data points to read from the PLC</param>
-        /// <param name="startIndex">The first position to read (only applies when items is greater than 1)</param>
-        public byte[] Read(ushort address, ushort items = 1, byte startIndex = 0)
+		/// <inheritdoc cref="IConnection.NotifySentData" />
+		public event SentData NotifySentData;
+
+		/// <inheritdoc cref="IConnection.NotifyReceivedData" />
+		public event ReceivedData NotifyReceivedData;
+
+		/// <inheritdoc cref="ICommand.NotifyCommandError" />
+		public event CommandError NotifyCommandError;
+
+		private void Connection_NotifySentData(byte[] sent) => NotifySentData?.Invoke(sent);
+		private void Connection_NotifyReceivedData(byte[] received) => NotifyReceivedData?.Invoke(received);
+        private void Command_NotifyCommandError(string message) => NotifyCommandError?.Invoke(message);
+
+		/// <summary>
+		/// Reads data from the PLC
+		/// </summary>
+		/// <param name="address">The specific item to read</param>
+		/// <param name="items">The total number of data points to read from the PLC</param>
+		/// <param name="startIndex">The first position to read (only applies when items is greater than 1)</param>
+        /// <param name="area">The memory area on the PLC to read</param>
+		public byte[] Read(ushort address, ushort items = 1, byte startIndex = 0, MemoryAreaBits area = MemoryAreaBits.DataMemory)
         {
-            return Command.MemoryAreaRead(MemoryAreaBits.DataMemory, address, startIndex, items);
+            return Command.MemoryAreaRead(area, address, startIndex, items);
         }
 
-        /// <summary>
-        /// Reads data from the PLC and converts the result to a <see cref="bool"/>
-        /// </summary>
-        /// <param name="address">The specific item to read</param>
-        public bool ReadBool(ushort address)
+		/// <summary>
+		/// Writes the provided value(s) to the PLC
+		/// </summary>
+		/// <param name="address">The address on the PLC to write to</param>
+		/// <param name="values">The values to write to the PLC</param>
+		/// <param name="count">The number of items to write</param>
+		/// <param name="startIndex">The first position to write</param>
+		/// <param name="area">The memory area on the PLC to write</param>
+		public bool Write(ushort address, byte[] values, byte startIndex = 0, ushort count = 1, MemoryAreaBits area = MemoryAreaBits.DataMemory)
+		{
+			return Command.MemoryAreaWrite(area, address, startIndex, count, values);
+		}
+
+		/// <summary>
+		/// Reads data from the PLC and converts the result to a <see cref="bool"/>
+		/// </summary>
+		/// <param name="address">The specific item to read</param>
+		public bool ReadBool(ushort address)
         {
             return BitConverter.ToBoolean(Read(address), 0);
         }
@@ -291,7 +358,7 @@ namespace PLC_Omron_Standard
 		/// <param name="startIndex">The first position to write</param>
 		public bool Write(ushort address, bool[] values, byte startIndex = 0)
         {
-            return Write(address, values.SelectMany(x => BitConverter.GetBytes(x)).ToArray(), startIndex);
+            return Write(address, values.SelectMany(x => BitConverter.GetBytes(x)).ToArray(), startIndex, (ushort)values.Length);
         }
 
 		/// <summary>
@@ -302,7 +369,7 @@ namespace PLC_Omron_Standard
 		/// <param name="startIndex">The first position to write</param>
 		public bool Write(ushort address, short[] values, byte startIndex = 0)
         {
-            return Write(address, values.SelectMany(x => BitConverter.GetBytes(x).Reverse()).ToArray(), startIndex);
+            return Write(address, values.SelectMany(x => BitConverter.GetBytes(x).Reverse()).ToArray(), startIndex, (ushort)values.Length);
         }
 
 		/// <summary>
@@ -313,7 +380,7 @@ namespace PLC_Omron_Standard
 		/// <param name="startIndex">The first position to write</param>
 		public bool Write(ushort address, ushort[] values, byte startIndex = 0)
         {
-            return Write(address, values.SelectMany(x => BitConverter.GetBytes(x).Reverse()).ToArray(), startIndex);
+            return Write(address, values.SelectMany(x => BitConverter.GetBytes(x).Reverse()).ToArray(), startIndex, (ushort)values.Length);
         }
 
 		/// <summary>
@@ -324,7 +391,7 @@ namespace PLC_Omron_Standard
 		/// <param name="startIndex">The first position to write</param>
 		public bool Write(ushort address, int[] values, byte startIndex = 0)
         {
-            return Write(address, values.SelectMany(x => BitConverter.GetBytes(x).Reverse()).ToArray(), startIndex);
+            return Write(address, values.SelectMany(x => BitConverter.GetBytes(x).Reverse()).ToArray(), startIndex, (ushort)values.Length);
         }
 
 		/// <summary>
@@ -335,7 +402,7 @@ namespace PLC_Omron_Standard
 		/// <param name="startIndex">The first position to write</param>
 		public bool Write(ushort address, uint[] values, byte startIndex = 0)
         {
-            return Write(address, values.SelectMany(x => BitConverter.GetBytes(x).Reverse()).ToArray(), startIndex);
+            return Write(address, values.SelectMany(x => BitConverter.GetBytes(x).Reverse()).ToArray(), startIndex, (ushort)values.Length);
         }
 
 		/// <summary>
@@ -346,7 +413,7 @@ namespace PLC_Omron_Standard
 		/// <param name="startIndex">The first position to write</param>
 		public bool Write(ushort address, float[] values, byte startIndex = 0)
         {
-            return Write(address, values.SelectMany(x => BitConverter.GetBytes(x).Reverse()).ToArray(), startIndex);
+            return Write(address, values.SelectMany(x => BitConverter.GetBytes(x).Reverse()).ToArray(), startIndex, (ushort)values.Length);
         }
 
 		/// <summary>
@@ -357,18 +424,7 @@ namespace PLC_Omron_Standard
 		/// <param name="startIndex">The first position to write</param>
 		public bool Write(ushort address, string[] values, byte startIndex = 0)
         {
-            return Write(address, values.SelectMany(x => Encoding.ASCII.GetBytes(x)).ToArray(), startIndex);
-        }
-
-		/// <summary>
-		/// Writes the provided value(s) to the PLC
-		/// </summary>
-		/// <param name="address">The address on the PLC to write to</param>
-		/// <param name="values">The values to write to the PLC</param>
-		/// <param name="startIndex">The first position to write</param>
-		public bool Write(ushort address, byte[] values, byte startIndex = 0)
-        {
-            return Command.MemoryAreaWrite(MemoryAreaBits.DataMemory, address, startIndex, values);
+            return Write(address, values.SelectMany(x => Encoding.ASCII.GetBytes(x)).ToArray(), startIndex, (ushort)values.Length);
         }
     }
 }

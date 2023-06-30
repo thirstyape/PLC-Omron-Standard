@@ -1,9 +1,15 @@
 ﻿namespace PLC_Omron_Standard.Interfaces
 {
-    /// <summary>
-    /// Defines methods and properties required to communicate with a PLC
-    /// </summary>
-    internal interface IConnection
+    /// <param name="sent">The data that was sent to the PLC</param>
+	public delegate void SentData(byte[] sent);
+
+    /// <param name="received">The data that was received from the PLC</param>
+	public delegate void ReceivedData(byte[] received);
+
+	/// <summary>
+	/// Defines methods and properties required to communicate with a PLC
+	/// </summary>
+	internal interface IConnection
     {
         /// <summary>
         /// Specifies whether there is an active connection to the PLC
@@ -21,6 +27,16 @@
         byte LocalNode { get; }
 
         /// <summary>
+        /// Notifies data was sent to the PLC and returns the bytes that were sent
+        /// </summary>
+		event SentData NotifySentData;
+
+		/// <summary>
+		/// Notifies data was received from the PLC and returns the bytes that were received
+		/// </summary>
+		event ReceivedData NotifyReceivedData;
+
+		/// <summary>
 		/// Opens a connection with the PLC
 		/// </summary>
 		bool Connect();

@@ -6,12 +6,12 @@
     public enum MemoryAreaBits : byte
     {
         /// <summary>
-        /// Accesses the main data area
+        /// Accesses the data memory area
         /// </summary>
         DataMemory = 0x82,
 
         /// <summary>
-        /// 
+        /// Accesses the common IO area
         /// </summary>
         CommonIO = 0x30,
 

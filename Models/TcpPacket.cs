@@ -28,7 +28,7 @@ namespace PLC_Omron_Standard.Models
         /// </summary>
         private IEnumerable<byte> PacketLength => CommandType == TcpPacketTypes.Fins ?
             BitConverter.GetBytes(Convert.ToUInt32(TcpLength + FinsLength + Parameters.Length + Data.Length)).Reverse() :
-            BitConverter.GetBytes(Convert.ToUInt32(12)).Reverse();
+            BitConverter.GetBytes(Convert.ToUInt32(TcpLength + Parameters.Length)).Reverse();
 
         /// <summary>
         /// Returns the command type to issue to the PLC
@@ -46,9 +46,9 @@ namespace PLC_Omron_Standard.Models
         private IEnumerable<byte> FinsError => new byte[] { 0x00, 0x00, 0x00, 0x00 };
 
         /// <summary>
-        /// The length of the TCP headers
+        /// The length of the TCP headers without the FINS and Length portions
         /// </summary>
-        protected const int TcpLength = 16;
+        protected const int TcpLength = 8;
 
         /// <inheritdoc/>
         public override byte[] ToArray()

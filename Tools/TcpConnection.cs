@@ -8,10 +8,10 @@ using System.Net.Sockets;
 
 namespace PLC_Omron_Standard.Tools
 {
-    /// <summary>
-    /// Implementation of <see cref="IConnection"/> to facilitate TCP based connections
-    /// </summary>
-    internal class TcpConnection : IConnection
+	/// <summary>
+	/// Implementation of <see cref="IConnection"/> to facilitate TCP based connections
+	/// </summary>
+	internal class TcpConnection : IConnection
     {
         private const int CommandTimeoutMs = 2_000;
         private readonly Socket Socket;
@@ -34,8 +34,14 @@ namespace PLC_Omron_Standard.Tools
             Socket.Dispose();
         }
 
-        /// <inheritdoc/>
-        public bool IsConnected => Socket.Connected;
+		/// <inheritdoc/>
+		public event SentData NotifySentData;
+
+		/// <inheritdoc/>
+		public event ReceivedData NotifyReceivedData;
+
+		/// <inheritdoc/>
+		public bool IsConnected => Socket.Connected;
 
         /// <inheritdoc/>
         public byte RemoteNode { get; private set; }
@@ -108,8 +114,11 @@ namespace PLC_Omron_Standard.Tools
             {
                 var response = new byte[4_096];
                 var received = Socket.Receive(response, length, SocketFlags.None);
+                var data = response.Take(received).ToArray();
 
-                return response.Take(received).ToArray();
+				NotifyReceivedData?.Invoke(data);
+
+				return response.Take(received).ToArray();
             }
             catch
             {
@@ -128,7 +137,10 @@ namespace PLC_Omron_Standard.Tools
 
             try
             {
-                return Socket.Send(data, data.Length, SocketFlags.None) == data.Length;
+                var sent = Socket.Send(data, data.Length, SocketFlags.None);
+				NotifySentData?.Invoke(data);
+
+				return sent == data.Length;
             }
             catch
             {
