@@ -6,7 +6,7 @@
 	  <Copyright>Copyright 2023 $(Company)</Copyright>
 	  <Company>NF Software Inc.</Company>
 	  <Authors>Nathanael Frey</Authors>
-	  <PackageTags>plc omron communication TCP UDP events</PackageTags>
+	  <PackageTags>plc omron communication TCP UDP events FINS</PackageTags>
 	  <Description>
 		  This project was created to have an easy to use, .NET Standard library to communicate with Omron PLCs.
 	  </Description>
