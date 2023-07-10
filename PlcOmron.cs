@@ -12,9 +12,9 @@ namespace PLC_Omron_Standard
 	/// Main class to communicate with Omron PLCs
 	/// </summary>
 	public class PlcOmron
-    {
-        private readonly IConnection Connection;
-        private readonly ICommand Command;
+	{
+		private readonly IConnection Connection;
+		private readonly ICommand Command;
 
 		/// <summary>
 		/// Prepares the class for communications with a PLC
@@ -26,29 +26,29 @@ namespace PLC_Omron_Standard
 		/// <param name="localNode">The local node ID to communicate with the PLC (only required for UDP)</param>
 		/// <exception cref="ArgumentException"></exception>
 		public PlcOmron(string ip, int port = 9_600, bool useTcp = true, byte remoteNode = 0, byte localNode = 0)
-        {
-            var address = IPAddress.Parse(ip);
+		{
+			var address = IPAddress.Parse(ip);
 
-            if (useTcp)
-            {
-                Connection = new TcpConnection(address, port);
-                Command = new TcpCommand(Connection);
-            }
-            else
-            {
+			if (useTcp)
+			{
+				Connection = new TcpConnection(address, port);
+				Command = new TcpCommand(Connection);
+			}
+			else
+			{
 				if (localNode <= 0)
 					throw new ArgumentException("Must specify local node for UDP connections", nameof(localNode));
 				else if (remoteNode <= 0)
 					throw new ArgumentException("Must specify remote node for UDP connections", nameof(remoteNode));
 
 				Connection = new UdpConnection(address, port, remoteNode, localNode);
-                Command = new UdpCommand(Connection);
-            }
+				Command = new UdpCommand(Connection);
+			}
 
 			Connection.NotifyReceivedData += Connection_NotifyReceivedData;
 			Connection.NotifySentData += Connection_NotifySentData;
 			Command.NotifyCommandError += Command_NotifyCommandError;
-        }
+		}
 
 		/// <summary>
 		/// Prepares the class for communications with a PLC
@@ -60,47 +60,47 @@ namespace PLC_Omron_Standard
 		/// <param name="localNode">The local node ID to communicate with the PLC (only required for UDP)</param>
 		/// <exception cref="ArgumentException"></exception>
 		public PlcOmron(IPAddress ip, int port = 9_600, bool useTcp = true, byte remoteNode = 0, byte localNode = 0)
-        {
-            if (useTcp)
-            {
-                Connection = new TcpConnection(ip, port);
-                Command = new TcpCommand(Connection);
-            }
-            else
-            {
-                if (localNode <= 0)
-                    throw new ArgumentException("Must specify local node for UDP connections", nameof(localNode));
-                else if (remoteNode <= 0)
-                    throw new ArgumentException("Must specify remote node for UDP connections", nameof(remoteNode));
+		{
+			if (useTcp)
+			{
+				Connection = new TcpConnection(ip, port);
+				Command = new TcpCommand(Connection);
+			}
+			else
+			{
+				if (localNode <= 0)
+					throw new ArgumentException("Must specify local node for UDP connections", nameof(localNode));
+				else if (remoteNode <= 0)
+					throw new ArgumentException("Must specify remote node for UDP connections", nameof(remoteNode));
 
-                Connection = new UdpConnection(ip, port, remoteNode, localNode);
-                Command = new UdpCommand(Connection);
-            }
+				Connection = new UdpConnection(ip, port, remoteNode, localNode);
+				Command = new UdpCommand(Connection);
+			}
 
 			Connection.NotifyReceivedData += Connection_NotifyReceivedData;
 			Connection.NotifySentData += Connection_NotifySentData;
 			Command.NotifyCommandError += Command_NotifyCommandError;
 		}
 
-        ~PlcOmron()
-        {
+		~PlcOmron()
+		{
 			Connection.NotifyReceivedData -= Connection_NotifyReceivedData;
 			Connection.NotifySentData -= Connection_NotifySentData;
 			Command.NotifyCommandError -= Command_NotifyCommandError;
 
 			if (Connection.IsConnected)
-                Connection.Disconnect();
-        }
+				Connection.Disconnect();
+		}
 
-        /// <summary>
-        /// Opens a connection with the PLC
-        /// </summary>
-        public bool Connect() => Connection.IsConnected || Connection.Connect();
+		/// <summary>
+		/// Opens a connection with the PLC
+		/// </summary>
+		public bool Connect() => Connection.IsConnected || Connection.Connect();
 
-        /// <summary>
-        /// Closes the connection with the PLC
-        /// </summary>
-        public bool Disconnect() => Connection.IsConnected == false || Connection.Disconnect();
+		/// <summary>
+		/// Closes the connection with the PLC
+		/// </summary>
+		public bool Disconnect() => Connection.IsConnected == false || Connection.Disconnect();
 
 		/// <inheritdoc cref="IConnection.NotifySentData" />
 		public event SentData NotifySentData;
@@ -113,7 +113,7 @@ namespace PLC_Omron_Standard
 
 		private void Connection_NotifySentData(byte[] sent) => NotifySentData?.Invoke(sent);
 		private void Connection_NotifyReceivedData(byte[] received) => NotifyReceivedData?.Invoke(received);
-        private void Command_NotifyCommandError(string message) => NotifyCommandError?.Invoke(message);
+		private void Command_NotifyCommandError(string message) => NotifyCommandError?.Invoke(message);
 
 		/// <summary>
 		/// Reads data from the PLC
@@ -121,11 +121,11 @@ namespace PLC_Omron_Standard
 		/// <param name="address">The specific item to read</param>
 		/// <param name="items">The total number of data points to read from the PLC</param>
 		/// <param name="startIndex">The first position to read (only applies when items is greater than 1)</param>
-        /// <param name="area">The memory area on the PLC to read</param>
+		/// <param name="area">The memory area on the PLC to read</param>
 		public byte[] Read(ushort address, ushort items = 1, byte startIndex = 0, MemoryAreaBits area = MemoryAreaBits.DataMemory)
-        {
-            return Command.MemoryAreaRead(area, address, startIndex, items);
-        }
+		{
+			return Command.MemoryAreaRead(area, address, startIndex, items);
+		}
 
 		/// <summary>
 		/// Writes the provided value(s) to the PLC
@@ -144,64 +144,124 @@ namespace PLC_Omron_Standard
 		/// Reads data from the PLC and converts the result to a <see cref="bool"/>
 		/// </summary>
 		/// <param name="address">The specific item to read</param>
+		/// <exception cref="ArgumentException"></exception>
+		/// <exception cref="NullReferenceException"></exception>
 		public bool ReadBool(ushort address)
-        {
-            return BitConverter.ToBoolean(Read(address), 0);
-        }
+		{
+			var raw = Read(address);
 
-        /// <summary>
-        /// Reads data from the PLC and converts the result to a <see cref="short"/>
-        /// </summary>
-        /// <param name="address">The specific item to read</param>
-        public short ReadShort(ushort address)
-        {
-            return BitConverter.ToInt16(Read(address).Reverse().ToArray(), 0);
-        }
+			if (raw.Length == 2)
+				return BitConverter.ToBoolean(raw.Reverse().ToArray(), 1);
+			else if (raw.Length > 2)
+				throw new ArgumentException("Received too much data from PLC on read.");
+			else
+				throw new NullReferenceException("Did not receive enough data from PLC on read.");
+		}
 
-        /// <summary>
-        /// Reads data from the PLC and converts the result to a <see cref="ushort"/>
-        /// </summary>
-        /// <param name="address">The specific item to read</param>
-        public ushort ReadUShort(ushort address)
-        {
-            return BitConverter.ToUInt16(Read(address).Reverse().ToArray(), 0);
-        }
+		/// <summary>
+		/// Reads data from the PLC and converts the result to a <see cref="short"/>
+		/// </summary>
+		/// <param name="address">The specific item to read</param>
+		/// <exception cref="ArgumentException"></exception>
+		/// <exception cref="NullReferenceException"></exception>
+		public short ReadShort(ushort address)
+		{
+			var raw = Read(address);
 
-        /// <summary>
-        /// Reads data from the PLC and converts the result to a <see cref="int"/>
-        /// </summary>
-        /// <param name="address">The specific item to read</param>
-        public int ReadInt(ushort address)
-        {
-            return BitConverter.ToInt32(Read(address).Reverse().ToArray(), 0);
-        }
+			if (raw.Length == 2)
+				return BitConverter.ToInt16(raw.Reverse().ToArray(), 0);
+			else if (raw.Length > 2)
+				throw new ArgumentException("Received too much data from PLC on read.");
+			else
+				throw new NullReferenceException("Did not receive enough data from PLC on read.");
+		}
 
-        /// <summary>
-        /// Reads data from the PLC and converts the result to a <see cref="uint"/>
-        /// </summary>
-        /// <param name="address">The specific item to read</param>
-        public uint ReadUInt(ushort address)
-        {
-            return BitConverter.ToUInt32(Read(address).Reverse().ToArray(), 0);
-        }
+		/// <summary>
+		/// Reads data from the PLC and converts the result to a <see cref="ushort"/>
+		/// </summary>
+		/// <param name="address">The specific item to read</param>
+		/// <exception cref="ArgumentException"></exception>
+		/// <exception cref="NullReferenceException"></exception>
+		public ushort ReadUShort(ushort address)
+		{
+			var raw = Read(address);
 
-        /// <summary>
-        /// Reads data from the PLC and converts the result to a <see cref="float"/>
-        /// </summary>
-        /// <param name="address">The specific item to read</param>
-        public float ReadFloat(ushort address)
-        {
-            return BitConverter.ToSingle(Read(address).Reverse().ToArray(), 0);
-        }
+			if (raw.Length == 2)
+				return BitConverter.ToUInt16(raw.Reverse().ToArray(), 0);
+			else if (raw.Length > 2)
+				throw new ArgumentException("Received too much data from PLC on read.");
+			else
+				throw new NullReferenceException("Did not receive enough data from PLC on read.");
+		}
 
-        /// <summary>
-        /// Reads data from the PLC and converts the result to a <see cref="string"/>
-        /// </summary>
-        /// <param name="address">The specific item to read</param>
-        public string ReadString(ushort address)
-        {
-            return Encoding.ASCII.GetString(Read(address));
-        }
+		/// <summary>
+		/// Reads data from the PLC and converts the result to a <see cref="int"/>
+		/// </summary>
+		/// <param name="address">The specific item to read</param>
+		/// <exception cref="ArgumentException"></exception>
+		/// <exception cref="NullReferenceException"></exception>
+		public int ReadInt(ushort address)
+		{
+			var raw = Read(address, 2);
+
+			if (raw.Length == 4)
+				return BitConverter.ToInt32(raw.Reverse().ToArray(), 0);
+			else if (raw.Length > 4)
+				throw new ArgumentException("Received too much data from PLC on read.");
+			else
+				throw new NullReferenceException("Did not receive enough data from PLC on read.");
+		}
+
+		/// <summary>
+		/// Reads data from the PLC and converts the result to a <see cref="uint"/>
+		/// </summary>
+		/// <param name="address">The specific item to read</param>
+		/// <exception cref="ArgumentException"></exception>
+		/// <exception cref="NullReferenceException"></exception>
+		public uint ReadUInt(ushort address)
+		{
+			var raw = Read(address, 2);
+
+			if (raw.Length == 4)
+				return BitConverter.ToUInt32(raw.Reverse().ToArray(), 0);
+			else if (raw.Length > 4)
+				throw new ArgumentException("Received too much data from PLC on read.");
+			else
+				throw new NullReferenceException("Did not receive enough data from PLC on read.");
+		}
+
+		/// <summary>
+		/// Reads data from the PLC and converts the result to a <see cref="float"/>
+		/// </summary>
+		/// <param name="address">The specific item to read</param>
+		/// <exception cref="ArgumentException"></exception>
+		/// <exception cref="NullReferenceException"></exception>
+		public float ReadFloat(ushort address)
+		{
+			var raw = Read(address, 2);
+
+			if (raw.Length == 4)
+				return BitConverter.ToSingle(raw.Reverse().ToArray(), 0);
+			else if (raw.Length > 4)
+				throw new ArgumentException("Received too much data from PLC on read.");
+			else
+				throw new NullReferenceException("Did not receive enough data from PLC on read.");
+		}
+
+		/// <summary>
+		/// Reads data from the PLC and converts the result to a <see cref="string"/>
+		/// </summary>
+		/// <param name="address">The specific item to read</param>
+		/// <exception cref="NullReferenceException"></exception>
+		public string ReadString(ushort address)
+		{
+			var raw = Read(address);
+
+			if (raw.Length > 0)
+				return Encoding.ASCII.GetString(Read(address));
+			else
+				throw new NullReferenceException("Did not receive enough data from PLC on read.");
+		}
 
 		/// <summary>
 		/// Reads data from the PLC and converts the result to a <see cref="bool"/> array
@@ -209,10 +269,20 @@ namespace PLC_Omron_Standard
 		/// <param name="address">The specific item to read</param>
 		/// <param name="items">The total number of data points to read from the PLC</param>
 		/// <param name="startIndex">The first position to read</param>
+		/// <exception cref="ArgumentException"></exception>
+		/// <exception cref="NullReferenceException"></exception>
 		public bool[] ReadBoolArray(ushort address, ushort items, byte startIndex = 0)
-        {
-            return Read(address, items, startIndex).Select(x => BitConverter.ToBoolean(new byte[] { x }, 0)).ToArray();
-        }
+		{
+			var raw = Read(address, items, startIndex);
+			var expected = items * 2;
+
+			if (raw.Length == expected)
+				return raw.Partition(2, false).Select(x => BitConverter.ToBoolean(x.Reverse().ToArray(), 1)).ToArray();
+			else if (raw.Length > expected)
+				throw new ArgumentException("Received too much data from PLC on read.");
+			else
+				throw new NullReferenceException("Did not receive enough data from PLC on read.");
+		}
 
 		/// <summary>
 		/// Reads data from the PLC and converts the result to a <see cref="short"/> array
@@ -220,10 +290,20 @@ namespace PLC_Omron_Standard
 		/// <param name="address">The specific item to read</param>
 		/// <param name="items">The total number of data points to read from the PLC</param>
 		/// <param name="startIndex">The first position to read</param>
+		/// <exception cref="ArgumentException"></exception>
+		/// <exception cref="NullReferenceException"></exception>
 		public short[] ReadShortArray(ushort address, ushort items, byte startIndex = 0)
-        {
-            return Read(address, items, startIndex).Partition(2, false).Select(x => BitConverter.ToInt16(x.Reverse().ToArray(), 0)).ToArray();
-        }
+		{
+			var raw = Read(address, items, startIndex);
+			var expected = items * 2;
+
+			if (raw.Length == expected)
+				return raw.Partition(2, false).Select(x => BitConverter.ToInt16(x.Reverse().ToArray(), 0)).ToArray();
+			else if (raw.Length > expected)
+				throw new ArgumentException("Received too much data from PLC on read.");
+			else
+				throw new NullReferenceException("Did not receive enough data from PLC on read.");
+		}
 
 		/// <summary>
 		/// Reads data from the PLC and converts the result to a <see cref="ushort"/> array
@@ -231,10 +311,20 @@ namespace PLC_Omron_Standard
 		/// <param name="address">The specific item to read</param>
 		/// <param name="items">The total number of data points to read from the PLC</param>
 		/// <param name="startIndex">The first position to read</param>
+		/// <exception cref="ArgumentException"></exception>
+		/// <exception cref="NullReferenceException"></exception>
 		public ushort[] ReadUShortArray(ushort address, ushort items, byte startIndex = 0)
-        {
-            return Read(address, items, startIndex).Partition(2, false).Select(x => BitConverter.ToUInt16(x.Reverse().ToArray(), 0)).ToArray();
-        }
+		{
+			var raw = Read(address, items, startIndex);
+			var expected = items * 2;
+
+			if (raw.Length == expected)
+				return raw.Partition(2, false).Select(x => BitConverter.ToUInt16(x.Reverse().ToArray(), 0)).ToArray();
+			else if (raw.Length > expected)
+				throw new ArgumentException("Received too much data from PLC on read.");
+			else
+				throw new NullReferenceException("Did not receive enough data from PLC on read.");
+		}
 
 		/// <summary>
 		/// Reads data from the PLC and converts the result to a <see cref="int"/> array
@@ -242,10 +332,20 @@ namespace PLC_Omron_Standard
 		/// <param name="address">The specific item to read</param>
 		/// <param name="items">The total number of data points to read from the PLC</param>
 		/// <param name="startIndex">The first position to read</param>
+		/// <exception cref="ArgumentException"></exception>
+		/// <exception cref="NullReferenceException"></exception>
 		public int[] ReadIntArray(ushort address, ushort items, byte startIndex = 0)
-        {
-            return Read(address, items, startIndex).Partition(4, false).Select(x => BitConverter.ToInt32(x.Reverse().ToArray(), 0)).ToArray();
-        }
+		{
+			var raw = Read(address, (ushort)(items * 2), startIndex);
+			var expected = items * 4;
+
+			if (raw.Length == expected)
+				return raw.Partition(4, false).Select(x => BitConverter.ToInt32(x.Reverse().ToArray(), 0)).ToArray();
+			else if (raw.Length > expected)
+				throw new ArgumentException("Received too much data from PLC on read.");
+			else
+				throw new NullReferenceException("Did not receive enough data from PLC on read.");
+		}
 
 		/// <summary>
 		/// Reads data from the PLC and converts the result to a <see cref="uint"/> array
@@ -253,10 +353,20 @@ namespace PLC_Omron_Standard
 		/// <param name="address">The specific item to read</param>
 		/// <param name="items">TThe total number of data points to read from the PLC</param>
 		/// <param name="startIndex">The first position to read</param>
+		/// <exception cref="ArgumentException"></exception>
+		/// <exception cref="NullReferenceException"></exception>
 		public uint[] ReadUIntArray(ushort address, ushort items, byte startIndex = 0)
-        {
-            return Read(address, items, startIndex).Partition(4, false).Select(x => BitConverter.ToUInt32(x.Reverse().ToArray(), 0)).ToArray();
-        }
+		{
+			var raw = Read(address, (ushort)(items * 2), startIndex);
+			var expected = items * 4;
+
+			if (raw.Length == expected)
+				return raw.Partition(4, false).Select(x => BitConverter.ToUInt32(x.Reverse().ToArray(), 0)).ToArray();
+			else if (raw.Length > expected)
+				throw new ArgumentException("Received too much data from PLC on read.");
+			else
+				throw new NullReferenceException("Did not receive enough data from PLC on read.");
+		}
 
 		/// <summary>
 		/// Reads data from the PLC and converts the result to a <see cref="float"/> array
@@ -264,10 +374,20 @@ namespace PLC_Omron_Standard
 		/// <param name="address">The specific item to read</param>
 		/// <param name="items">The total number of data points to read from the PLC</param>
 		/// <param name="startIndex">The first position to read</param>
+		/// <exception cref="ArgumentException"></exception>
+		/// <exception cref="NullReferenceException"></exception>
 		public float[] ReadFloatArray(ushort address, ushort items, byte startIndex = 0)
-        {
-            return Read(address, items, startIndex).Partition(4, false).Select(x => BitConverter.ToSingle(x.Reverse().ToArray(), 0)).ToArray();
-        }
+		{
+			var raw = Read(address, (ushort)(items * 2), startIndex);
+			var expected = items * 4;
+
+			if (raw.Length == expected)
+				return raw.Partition(4, false).Select(x => BitConverter.ToSingle(x.Reverse().ToArray(), 0)).ToArray();
+			else if (raw.Length > expected)
+				throw new ArgumentException("Received too much data from PLC on read.");
+			else
+				throw new NullReferenceException("Did not receive enough data from PLC on read.");
+		}
 
 		/// <summary>
 		/// Reads data from the PLC and converts the result to a <see cref="string"/> array
@@ -275,80 +395,95 @@ namespace PLC_Omron_Standard
 		/// <param name="address">The specific item to read</param>
 		/// <param name="items">The total number of data points to read from the PLC</param>
 		/// <param name="startIndex">The first position to read</param>
+		/// <exception cref="NullReferenceException"></exception>
 		public string[] ReadStringArray(ushort address, ushort items, byte startIndex = 0)
-        {
-            return Encoding.ASCII.GetString(Read(address, items, startIndex)).Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None);
-        }
+		{
+			var raw = Read(address, items, startIndex);
 
-        /// <summary>
-        /// Writes the provided value to the PLC
-        /// </summary>
-        /// <param name="address">The address on the PLC to write to</param>
-        /// <param name="values">The value to write to the PLC</param>
-        public bool Write(ushort address, bool value)
-        {
-            return Write(address, BitConverter.GetBytes(value));
-        }
+			if (raw.Length > 0)
+				return Encoding.ASCII.GetString(raw).Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None);
+			else
+				throw new NullReferenceException("Did not receive enough data from PLC on read.");
+		}
 
-        /// <summary>
-        /// Writes the provided value to the PLC
-        /// </summary>
-        /// <param name="address">The address on the PLC to write to</param>
-        /// <param name="values">The value to write to the PLC</param>
-        public bool Write(ushort address, short value)
-        {
-            return Write(address, BitConverter.GetBytes(value).Reverse().ToArray());
-        }
+		/// <summary>
+		/// Writes the provided value to the PLC
+		/// </summary>
+		/// <param name="address">The address on the PLC to write to</param>
+		/// <param name="values">The value to write to the PLC</param>
+		public bool Write(ushort address, bool value)
+		{
+			return Write(address, BitConverter.GetBytes(value).Concat(new byte[] { 0 }).Reverse().ToArray());
+		}
 
-        /// <summary>
-        /// Writes the provided value to the PLC
-        /// </summary>
-        /// <param name="address">The address on the PLC to write to</param>
-        /// <param name="values">The value to write to the PLC</param>
-        public bool Write(ushort address, ushort value)
-        {
-            return Write(address, BitConverter.GetBytes(value).Reverse().ToArray());
-        }
+		/// <summary>
+		/// Writes the provided value to the PLC
+		/// </summary>
+		/// <param name="address">The address on the PLC to write to</param>
+		/// <param name="values">The value to write to the PLC</param>
+		public bool Write(ushort address, short value)
+		{
+			return Write(address, BitConverter.GetBytes(value).Reverse().ToArray());
+		}
 
-        /// <summary>
-        /// Writes the provided value to the PLC
-        /// </summary>
-        /// <param name="address">The address on the PLC to write to</param>
-        /// <param name="values">The value to write to the PLC</param>
-        public bool Write(ushort address, int value)
-        {
-            return Write(address, BitConverter.GetBytes(value).Reverse().ToArray());
-        }
+		/// <summary>
+		/// Writes the provided value to the PLC
+		/// </summary>
+		/// <param name="address">The address on the PLC to write to</param>
+		/// <param name="values">The value to write to the PLC</param>
+		public bool Write(ushort address, ushort value)
+		{
+			return Write(address, BitConverter.GetBytes(value).Reverse().ToArray());
+		}
 
-        /// <summary>
-        /// Writes the provided value to the PLC
-        /// </summary>
-        /// <param name="address">The address on the PLC to write to</param>
-        /// <param name="values">The value to write to the PLC</param>
-        public bool Write(ushort address, uint value)
-        {
-            return Write(address, BitConverter.GetBytes(value).Reverse().ToArray());
-        }
+		/// <summary>
+		/// Writes the provided value to the PLC
+		/// </summary>
+		/// <param name="address">The address on the PLC to write to</param>
+		/// <param name="values">The value to write to the PLC</param>
+		/// <remarks>
+		/// Writes to the two consecutive sub-addresses at the provided start index
+		/// </remarks>
+		public bool Write(ushort address, int value)
+		{
+			return Write(address, BitConverter.GetBytes(value).Reverse().ToArray(), count: 2);
+		}
 
-        /// <summary>
-        /// Writes the provided value to the PLC
-        /// </summary>
-        /// <param name="address">The address on the PLC to write to</param>
-        /// <param name="values">The value to write to the PLC</param>
-        public bool Write(ushort address, float value)
-        {
-            return Write(address, BitConverter.GetBytes(value).Reverse().ToArray());
-        }
+		/// <summary>
+		/// Writes the provided value to the PLC
+		/// </summary>
+		/// <param name="address">The address on the PLC to write to</param>
+		/// <param name="values">The value to write to the PLC</param>
+		/// <remarks>
+		/// Writes to the two consecutive sub-addresses at the provided start index
+		/// </remarks>
+		public bool Write(ushort address, uint value)
+		{
+			return Write(address, BitConverter.GetBytes(value).Reverse().ToArray(), count: 2);
+		}
 
-        /// <summary>
-        /// Writes the provided value to the PLC
-        /// </summary>
-        /// <param name="address">The address on the PLC to write to</param>
-        /// <param name="values">The value to write to the PLC</param>
-        public bool Write(ushort address, string value)
-        {
-            return Write(address, Encoding.ASCII.GetBytes(value).ToArray());
-        }
+		/// <summary>
+		/// Writes the provided value to the PLC
+		/// </summary>
+		/// <param name="address">The address on the PLC to write to</param>
+		/// <param name="values">The value to write to the PLC</param>
+		/// <remarks>
+		/// Writes to the two consecutive sub-addresses at the provided start index
+		/// </remarks>
+		public bool Write(ushort address, float value)
+		{
+			return Write(address, BitConverter.GetBytes(value).Reverse().ToArray(), count: 2);
+		}
+
+		/// <summary>
+		/// Writes the provided value to the PLC
+		/// </summary>
+		/// <param name="address">The address on the PLC to write to</param>
+		/// <param name="values">The value to write to the PLC</param>
+		public bool Write(ushort address, string value)
+		{
+			return Write(address, Encoding.ASCII.GetBytes(value).ToArray());
+		}
 
 		/// <summary>
 		/// Writes the provided values to the PLC
@@ -357,9 +492,9 @@ namespace PLC_Omron_Standard
 		/// <param name="values">The values to write to the PLC</param>
 		/// <param name="startIndex">The first position to write</param>
 		public bool Write(ushort address, bool[] values, byte startIndex = 0)
-        {
-            return Write(address, values.SelectMany(x => BitConverter.GetBytes(x)).ToArray(), startIndex, (ushort)values.Length);
-        }
+		{
+			return Write(address, values.SelectMany(x => BitConverter.GetBytes(x).Concat(new byte[] { 0 }).Reverse()).ToArray(), startIndex, (ushort)values.Length);
+		}
 
 		/// <summary>
 		/// Writes the provided values to the PLC
@@ -368,9 +503,9 @@ namespace PLC_Omron_Standard
 		/// <param name="values">The values to write to the PLC</param>
 		/// <param name="startIndex">The first position to write</param>
 		public bool Write(ushort address, short[] values, byte startIndex = 0)
-        {
-            return Write(address, values.SelectMany(x => BitConverter.GetBytes(x).Reverse()).ToArray(), startIndex, (ushort)values.Length);
-        }
+		{
+			return Write(address, values.SelectMany(x => BitConverter.GetBytes(x).Reverse()).ToArray(), startIndex, (ushort)values.Length);
+		}
 
 		/// <summary>
 		/// Writes the provided values to the PLC
@@ -379,9 +514,9 @@ namespace PLC_Omron_Standard
 		/// <param name="values">The values to write to the PLC</param>
 		/// <param name="startIndex">The first position to write</param>
 		public bool Write(ushort address, ushort[] values, byte startIndex = 0)
-        {
-            return Write(address, values.SelectMany(x => BitConverter.GetBytes(x).Reverse()).ToArray(), startIndex, (ushort)values.Length);
-        }
+		{
+			return Write(address, values.SelectMany(x => BitConverter.GetBytes(x).Reverse()).ToArray(), startIndex, (ushort)values.Length);
+		}
 
 		/// <summary>
 		/// Writes the provided values to the PLC
@@ -389,10 +524,13 @@ namespace PLC_Omron_Standard
 		/// <param name="address">The address on the PLC to write to</param>
 		/// <param name="values">The values to write to the PLC</param>
 		/// <param name="startIndex">The first position to write</param>
+		/// <remarks>
+		/// Writes values to pairs of two consecutive sub-addresses
+		/// </remarks>
 		public bool Write(ushort address, int[] values, byte startIndex = 0)
-        {
-            return Write(address, values.SelectMany(x => BitConverter.GetBytes(x).Reverse()).ToArray(), startIndex, (ushort)values.Length);
-        }
+		{
+			return Write(address, values.SelectMany(x => BitConverter.GetBytes(x).Reverse()).ToArray(), startIndex, (ushort)(values.Length * 2));
+		}
 
 		/// <summary>
 		/// Writes the provided values to the PLC
@@ -400,10 +538,13 @@ namespace PLC_Omron_Standard
 		/// <param name="address">The address on the PLC to write to</param>
 		/// <param name="values">The values to write to the PLC</param>
 		/// <param name="startIndex">The first position to write</param>
+		/// <remarks>
+		/// Writes values to pairs of two consecutive sub-addresses
+		/// </remarks>
 		public bool Write(ushort address, uint[] values, byte startIndex = 0)
-        {
-            return Write(address, values.SelectMany(x => BitConverter.GetBytes(x).Reverse()).ToArray(), startIndex, (ushort)values.Length);
-        }
+		{
+			return Write(address, values.SelectMany(x => BitConverter.GetBytes(x).Reverse()).ToArray(), startIndex, (ushort)(values.Length * 2));
+		}
 
 		/// <summary>
 		/// Writes the provided values to the PLC
@@ -411,10 +552,13 @@ namespace PLC_Omron_Standard
 		/// <param name="address">The address on the PLC to write to</param>
 		/// <param name="values">The values to write to the PLC</param>
 		/// <param name="startIndex">The first position to write</param>
+		/// <remarks>
+		/// Writes values to pairs of two consecutive sub-addresses
+		/// </remarks>
 		public bool Write(ushort address, float[] values, byte startIndex = 0)
-        {
-            return Write(address, values.SelectMany(x => BitConverter.GetBytes(x).Reverse()).ToArray(), startIndex, (ushort)values.Length);
-        }
+		{
+			return Write(address, values.SelectMany(x => BitConverter.GetBytes(x).Reverse()).ToArray(), startIndex, (ushort)(values.Length * 2));
+		}
 
 		/// <summary>
 		/// Writes the provided values to the PLC
@@ -423,8 +567,8 @@ namespace PLC_Omron_Standard
 		/// <param name="values">The values to write to the PLC</param>
 		/// <param name="startIndex">The first position to write</param>
 		public bool Write(ushort address, string[] values, byte startIndex = 0)
-        {
-            return Write(address, values.SelectMany(x => Encoding.ASCII.GetBytes(x)).ToArray(), startIndex, (ushort)values.Length);
-        }
-    }
+		{
+			return Write(address, values.SelectMany(x => Encoding.ASCII.GetBytes(x)).ToArray(), startIndex, (ushort)values.Length);
+		}
+	}
 }

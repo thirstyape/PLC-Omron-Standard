@@ -13,8 +13,11 @@
 	  <PackageLicenseFile>LICENSE</PackageLicenseFile>
 	  <PackageId>Plc.Omron.Standard</PackageId>
 	  <RepositoryUrl>https://github.com/thirstyape/PLC-Omron-Standard</RepositoryUrl>
-	  <Version>1.0.3</Version>
+	  <Version>1.0.4</Version>
 	  <PackageReleaseNotes>
+		  1.0.4
+		  Improve error handling
+		  
 		  1.0.3
 		  Add events, update UDP connection, bugfixes
 		  
@@ -27,7 +30,7 @@
 		  1.0.0
 		  Initial release
 	  </PackageReleaseNotes>
-	  <AssemblyVersion>1.0.3.0</AssemblyVersion>
+	  <AssemblyVersion>1.0.4.0</AssemblyVersion>
   </PropertyGroup>
 
 	<ItemGroup>

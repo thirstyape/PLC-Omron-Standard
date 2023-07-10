@@ -55,9 +55,14 @@ namespace PLC_Omron_Standard.Tools
 
 			var data = Connection.ReceiveData(0);
 
-            if (data.Length < 14)
+            if (data.Length == 0)
             {
-				NotifyCommandError?.Invoke("Failed reading from PLC memory area");
+				NotifyCommandError?.Invoke("Failed reading FINS header from PLC memory area");
+				return Array.Empty<byte>();
+			}
+            else if (data.Length < 14)
+            {
+				NotifyCommandError?.Invoke("Failed receiving data from PLC memory area");
 				return Array.Empty<byte>();
 			}
 
@@ -103,11 +108,16 @@ namespace PLC_Omron_Standard.Tools
             
             var response = Connection.ReceiveData(0);
 
-			if (response.Length < 14)
+			if (response.Length == 0)
             {
 				NotifyCommandError?.Invoke("Failed to receive response from PLC for memory area write");
 				return false;
 			}
+            else if (response.Length < 14)
+            {
+				NotifyCommandError?.Invoke("Did not receive correct FINS header during write to memory area");
+				return true;
+            }
 
 			if (response[12] != 0 && ResponseCodesDictionary.IsError(response[12]))
 			{

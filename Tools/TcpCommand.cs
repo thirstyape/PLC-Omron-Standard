@@ -57,14 +57,25 @@ namespace PLC_Omron_Standard.Tools
 
             if (header.Length < 16)
             {
-				NotifyCommandError?.Invoke("Failed reading from PLC memory area");
+				NotifyCommandError?.Invoke("Failed reading TCP header from PLC memory area");
 				return Array.Empty<byte>();
 			}
 
             var available = BitConverter.ToUInt16(new byte[] { header[6], header[7] }.Reverse().ToArray(), 0);
             var data = Connection.ReceiveData(available + 14);
 
-            if (data[12] != 0 && ResponseCodesDictionary.IsError(data[12]))
+			if (data.Length == 0)
+			{
+				NotifyCommandError?.Invoke("Failed reading FINS header from PLC memory area");
+				return Array.Empty<byte>();
+			}
+			else if (data.Length < 14)
+			{
+				NotifyCommandError?.Invoke("Failed receiving data from PLC memory area");
+				return Array.Empty<byte>();
+			}
+
+			if (data[12] != 0 && ResponseCodesDictionary.IsError(data[12]))
                 NotifyCommandError?.Invoke(ResponseCodesDictionary.GetCodeMessage(data[12]));
             else if (data[13] != 0 && ResponseCodesDictionary.IsError(data[13]))
 				NotifyCommandError?.Invoke(ResponseCodesDictionary.GetCodeMessage(data[13]));
@@ -106,15 +117,20 @@ namespace PLC_Omron_Standard.Tools
 
             var response = Connection.ReceiveData(16);
 
-			if (response.Length < 30)
+			if (response.Length == 0)
             {
 				NotifyCommandError?.Invoke("Failed to receive response from PLC for memory area write");
 				return false;
 			}
-            else if (response.Take(4).SequenceEqual(packet.FinsHeader) == false)
+            else if (response.Length >= 4 && response.Take(4).SequenceEqual(packet.FinsHeader) == false)
             {
 				NotifyCommandError?.Invoke("TCP FINS header from PLC for memory area write was invalid");
 				return false;
+			}
+			else if (response.Length < 30)
+			{
+				NotifyCommandError?.Invoke("Did not receive correct FINS header during write to memory area");
+				return true;
 			}
 
 			if (response[28] != 0 && ResponseCodesDictionary.IsError(response[28]))
