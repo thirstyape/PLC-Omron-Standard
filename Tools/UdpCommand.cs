@@ -25,13 +25,16 @@ namespace PLC_Omron_Standard.Tools
 		/// <inheritdoc/>
 		public byte[] MemoryAreaRead(MemoryAreaBits bit, ushort address, byte position, ushort length)
         {
-            if (Connection.IsConnected == false)
+			// Check connection
+			if (Connection.IsConnected == false)
             {
-				NotifyCommandError?.Invoke("PLC is not connected");
+				NotifyCommandError?.Invoke(ErrorMessages.PlcNotConnected);
 				return Array.Empty<byte>();
 			}
 
-            var parameters = new List<byte>
+			// Build request
+			var action = "memory area read";
+			var parameters = new List<byte>
             {
                 (byte)bit
             };
@@ -47,22 +50,24 @@ namespace PLC_Omron_Standard.Tools
                 Parameters = parameters.ToArray()
             };
 
-            if (Connection.SendData(packet) == false)
+			// Send request
+			if (Connection.SendData(packet) == false)
             {
-				NotifyCommandError?.Invoke("Failed to request data from PLC for memory area read");
+				NotifyCommandError?.Invoke(ErrorMessages.FailedRequestingPlcRead);
 				return Array.Empty<byte>();
 			}
 
+			// Receive FINS header + data
 			var data = Connection.ReceiveData(0);
 
             if (data.Length == 0)
             {
-				NotifyCommandError?.Invoke("Failed reading FINS header from PLC memory area");
+				NotifyCommandError?.Invoke(ErrorMessages.NoResponse(action));
 				return Array.Empty<byte>();
 			}
             else if (data.Length < 14)
             {
-				NotifyCommandError?.Invoke("Failed receiving data from PLC memory area");
+				NotifyCommandError?.Invoke(ErrorMessages.InvalidFinsHeader(action, data.Length));
 				return Array.Empty<byte>();
 			}
 
@@ -77,13 +82,16 @@ namespace PLC_Omron_Standard.Tools
         /// <inheritdoc/>
         public bool MemoryAreaWrite(MemoryAreaBits bit, ushort address, byte position, ushort count, byte[] data)
         {
-            if (Connection.IsConnected == false)
+			// Check connection
+			if (Connection.IsConnected == false)
             {
-				NotifyCommandError?.Invoke("PLC is not connected");
+				NotifyCommandError?.Invoke(ErrorMessages.PlcNotConnected);
 				return false;
 			}
 
-            var parameters = new List<byte>
+			// Build request
+			var action = "memory area write";
+			var parameters = new List<byte>
             {
                 (byte)bit
             };
@@ -100,22 +108,24 @@ namespace PLC_Omron_Standard.Tools
                 Data = data
             };
 
-            if (Connection.SendData(packet) == false)
+			// Send data
+			if (Connection.SendData(packet) == false)
             {
-				NotifyCommandError?.Invoke("Failed writing to PLC memory area");
+				NotifyCommandError?.Invoke(ErrorMessages.FailedWritingToPlc);
 				return false;
 			}
-            
-            var response = Connection.ReceiveData(0);
+
+			// Receive FINS header
+			var response = Connection.ReceiveData(0);
 
 			if (response.Length == 0)
             {
-				NotifyCommandError?.Invoke("Failed to receive response from PLC for memory area write");
+				NotifyCommandError?.Invoke(ErrorMessages.NoResponse(action));
 				return false;
 			}
             else if (response.Length < 14)
             {
-				NotifyCommandError?.Invoke("Did not receive correct FINS header during write to memory area");
+				NotifyCommandError?.Invoke(ErrorMessages.InvalidFinsHeader(action, response.Length));
 				return true;
             }
 

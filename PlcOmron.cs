@@ -37,9 +37,9 @@ namespace PLC_Omron_Standard
 			else
 			{
 				if (localNode <= 0)
-					throw new ArgumentException("Must specify local node for UDP connections", nameof(localNode));
+					throw new ArgumentException(ErrorMessages.InvalidLocalUdpNode, nameof(localNode));
 				else if (remoteNode <= 0)
-					throw new ArgumentException("Must specify remote node for UDP connections", nameof(remoteNode));
+					throw new ArgumentException(ErrorMessages.InvalidRemoteUdpNode, nameof(remoteNode));
 
 				Connection = new UdpConnection(address, port, remoteNode, localNode);
 				Command = new UdpCommand(Connection);
@@ -69,9 +69,9 @@ namespace PLC_Omron_Standard
 			else
 			{
 				if (localNode <= 0)
-					throw new ArgumentException("Must specify local node for UDP connections", nameof(localNode));
+					throw new ArgumentException(ErrorMessages.InvalidLocalUdpNode, nameof(localNode));
 				else if (remoteNode <= 0)
-					throw new ArgumentException("Must specify remote node for UDP connections", nameof(remoteNode));
+					throw new ArgumentException(ErrorMessages.InvalidRemoteUdpNode, nameof(remoteNode));
 
 				Connection = new UdpConnection(ip, port, remoteNode, localNode);
 				Command = new UdpCommand(Connection);
@@ -149,13 +149,14 @@ namespace PLC_Omron_Standard
 		public bool ReadBool(ushort address)
 		{
 			var raw = Read(address);
+			var expected = 2;
 
-			if (raw.Length == 2)
+			if (raw.Length == expected)
 				return BitConverter.ToBoolean(raw.Reverse().ToArray(), 1);
-			else if (raw.Length > 2)
-				throw new ArgumentException("Received too much data from PLC on read.");
+			else if (raw.Length > expected)
+				throw new ArgumentException(ErrorMessages.ReceivedTooMuchData(expected, raw.Length));
 			else
-				throw new NullReferenceException("Did not receive enough data from PLC on read.");
+				throw new NullReferenceException(ErrorMessages.NotEnoughDataRecieved(expected, raw.Length));
 		}
 
 		/// <summary>
@@ -167,13 +168,14 @@ namespace PLC_Omron_Standard
 		public short ReadShort(ushort address)
 		{
 			var raw = Read(address);
+			var expected = 2;
 
-			if (raw.Length == 2)
+			if (raw.Length == expected)
 				return BitConverter.ToInt16(raw.Reverse().ToArray(), 0);
-			else if (raw.Length > 2)
-				throw new ArgumentException("Received too much data from PLC on read.");
+			else if (raw.Length > expected)
+				throw new ArgumentException(ErrorMessages.ReceivedTooMuchData(expected, raw.Length));
 			else
-				throw new NullReferenceException("Did not receive enough data from PLC on read.");
+				throw new NullReferenceException(ErrorMessages.NotEnoughDataRecieved(expected, raw.Length));
 		}
 
 		/// <summary>
@@ -185,13 +187,14 @@ namespace PLC_Omron_Standard
 		public ushort ReadUShort(ushort address)
 		{
 			var raw = Read(address);
+			var expected = 2;
 
-			if (raw.Length == 2)
+			if (raw.Length == expected)
 				return BitConverter.ToUInt16(raw.Reverse().ToArray(), 0);
-			else if (raw.Length > 2)
-				throw new ArgumentException("Received too much data from PLC on read.");
+			else if (raw.Length > expected)
+				throw new ArgumentException(ErrorMessages.ReceivedTooMuchData(expected, raw.Length));
 			else
-				throw new NullReferenceException("Did not receive enough data from PLC on read.");
+				throw new NullReferenceException(ErrorMessages.NotEnoughDataRecieved(expected, raw.Length));
 		}
 
 		/// <summary>
@@ -203,13 +206,14 @@ namespace PLC_Omron_Standard
 		public int ReadInt(ushort address)
 		{
 			var raw = Read(address, 2);
+			var expected = 4;
 
-			if (raw.Length == 4)
+			if (raw.Length == expected)
 				return BitConverter.ToInt32(raw.Reverse().ToArray(), 0);
-			else if (raw.Length > 4)
-				throw new ArgumentException("Received too much data from PLC on read.");
+			else if (raw.Length > expected)
+				throw new ArgumentException(ErrorMessages.ReceivedTooMuchData(expected, raw.Length));
 			else
-				throw new NullReferenceException("Did not receive enough data from PLC on read.");
+				throw new NullReferenceException(ErrorMessages.NotEnoughDataRecieved(expected, raw.Length));
 		}
 
 		/// <summary>
@@ -221,13 +225,14 @@ namespace PLC_Omron_Standard
 		public uint ReadUInt(ushort address)
 		{
 			var raw = Read(address, 2);
+			var expected = 4;
 
-			if (raw.Length == 4)
+			if (raw.Length == expected)
 				return BitConverter.ToUInt32(raw.Reverse().ToArray(), 0);
-			else if (raw.Length > 4)
-				throw new ArgumentException("Received too much data from PLC on read.");
+			else if (raw.Length > expected)
+				throw new ArgumentException(ErrorMessages.ReceivedTooMuchData(expected, raw.Length));
 			else
-				throw new NullReferenceException("Did not receive enough data from PLC on read.");
+				throw new NullReferenceException(ErrorMessages.NotEnoughDataRecieved(expected, raw.Length));
 		}
 
 		/// <summary>
@@ -239,13 +244,14 @@ namespace PLC_Omron_Standard
 		public float ReadFloat(ushort address)
 		{
 			var raw = Read(address, 2);
+			var expected = 4;
 
-			if (raw.Length == 4)
+			if (raw.Length == expected)
 				return BitConverter.ToSingle(raw.Reverse().ToArray(), 0);
-			else if (raw.Length > 4)
-				throw new ArgumentException("Received too much data from PLC on read.");
+			else if (raw.Length > expected)
+				throw new ArgumentException(ErrorMessages.ReceivedTooMuchData(expected, raw.Length));
 			else
-				throw new NullReferenceException("Did not receive enough data from PLC on read.");
+				throw new NullReferenceException(ErrorMessages.NotEnoughDataRecieved(expected, raw.Length));
 		}
 
 		/// <summary>
@@ -260,7 +266,7 @@ namespace PLC_Omron_Standard
 			if (raw.Length > 0)
 				return Encoding.ASCII.GetString(Read(address));
 			else
-				throw new NullReferenceException("Did not receive enough data from PLC on read.");
+				throw new NullReferenceException(ErrorMessages.NoDataReceived);
 		}
 
 		/// <summary>
@@ -279,9 +285,9 @@ namespace PLC_Omron_Standard
 			if (raw.Length == expected)
 				return raw.Partition(2, false).Select(x => BitConverter.ToBoolean(x.Reverse().ToArray(), 1)).ToArray();
 			else if (raw.Length > expected)
-				throw new ArgumentException("Received too much data from PLC on read.");
+				throw new ArgumentException(ErrorMessages.ReceivedTooMuchData(expected, raw.Length));
 			else
-				throw new NullReferenceException("Did not receive enough data from PLC on read.");
+				throw new NullReferenceException(ErrorMessages.NotEnoughDataRecieved(expected, raw.Length));
 		}
 
 		/// <summary>
@@ -300,9 +306,9 @@ namespace PLC_Omron_Standard
 			if (raw.Length == expected)
 				return raw.Partition(2, false).Select(x => BitConverter.ToInt16(x.Reverse().ToArray(), 0)).ToArray();
 			else if (raw.Length > expected)
-				throw new ArgumentException("Received too much data from PLC on read.");
+				throw new ArgumentException(ErrorMessages.ReceivedTooMuchData(expected, raw.Length));
 			else
-				throw new NullReferenceException("Did not receive enough data from PLC on read.");
+				throw new NullReferenceException(ErrorMessages.NotEnoughDataRecieved(expected, raw.Length));
 		}
 
 		/// <summary>
@@ -321,9 +327,9 @@ namespace PLC_Omron_Standard
 			if (raw.Length == expected)
 				return raw.Partition(2, false).Select(x => BitConverter.ToUInt16(x.Reverse().ToArray(), 0)).ToArray();
 			else if (raw.Length > expected)
-				throw new ArgumentException("Received too much data from PLC on read.");
+				throw new ArgumentException(ErrorMessages.ReceivedTooMuchData(expected, raw.Length));
 			else
-				throw new NullReferenceException("Did not receive enough data from PLC on read.");
+				throw new NullReferenceException(ErrorMessages.NotEnoughDataRecieved(expected, raw.Length));
 		}
 
 		/// <summary>
@@ -342,9 +348,9 @@ namespace PLC_Omron_Standard
 			if (raw.Length == expected)
 				return raw.Partition(4, false).Select(x => BitConverter.ToInt32(x.Reverse().ToArray(), 0)).ToArray();
 			else if (raw.Length > expected)
-				throw new ArgumentException("Received too much data from PLC on read.");
+				throw new ArgumentException(ErrorMessages.ReceivedTooMuchData(expected, raw.Length));
 			else
-				throw new NullReferenceException("Did not receive enough data from PLC on read.");
+				throw new NullReferenceException(ErrorMessages.NotEnoughDataRecieved(expected, raw.Length));
 		}
 
 		/// <summary>
@@ -363,9 +369,9 @@ namespace PLC_Omron_Standard
 			if (raw.Length == expected)
 				return raw.Partition(4, false).Select(x => BitConverter.ToUInt32(x.Reverse().ToArray(), 0)).ToArray();
 			else if (raw.Length > expected)
-				throw new ArgumentException("Received too much data from PLC on read.");
+				throw new ArgumentException(ErrorMessages.ReceivedTooMuchData(expected, raw.Length));
 			else
-				throw new NullReferenceException("Did not receive enough data from PLC on read.");
+				throw new NullReferenceException(ErrorMessages.NotEnoughDataRecieved(expected, raw.Length));
 		}
 
 		/// <summary>
@@ -384,9 +390,9 @@ namespace PLC_Omron_Standard
 			if (raw.Length == expected)
 				return raw.Partition(4, false).Select(x => BitConverter.ToSingle(x.Reverse().ToArray(), 0)).ToArray();
 			else if (raw.Length > expected)
-				throw new ArgumentException("Received too much data from PLC on read.");
+				throw new ArgumentException(ErrorMessages.ReceivedTooMuchData(expected, raw.Length));
 			else
-				throw new NullReferenceException("Did not receive enough data from PLC on read.");
+				throw new NullReferenceException(ErrorMessages.NotEnoughDataRecieved(expected, raw.Length));
 		}
 
 		/// <summary>
@@ -403,7 +409,7 @@ namespace PLC_Omron_Standard
 			if (raw.Length > 0)
 				return Encoding.ASCII.GetString(raw).Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None);
 			else
-				throw new NullReferenceException("Did not receive enough data from PLC on read.");
+				throw new NullReferenceException(ErrorMessages.NoDataReceived);
 		}
 
 		/// <summary>
