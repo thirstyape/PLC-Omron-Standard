@@ -115,7 +115,7 @@ public class MyClass()
 
 ## Authors
 
-* **Nathanael Frey**
+* **NF Software Inc.**
 
 ## License
 
@@ -126,3 +126,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 Parts of this library have been inspired by:
 * [mcOmron](https://github.com/mcNets/mcOmron)
 * [dotnet-omron](https://github.com/ricado-group/dotnet-omron)
+
+Thank you to:
+* [Freepik](https://www.flaticon.com/authors/freepik) for the project icon

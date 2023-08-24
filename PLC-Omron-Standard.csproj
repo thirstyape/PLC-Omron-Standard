@@ -5,19 +5,24 @@
 	  <RootNamespace>$(MSBuildProjectName.Replace("-", "_"))</RootNamespace>
 	  <Copyright>Copyright 2023 $(Company)</Copyright>
 	  <Company>NF Software Inc.</Company>
-	  <Authors>Nathanael Frey</Authors>
+	  <Authors>NF Software Inc.</Authors>
 	  <PackageTags>plc omron communication TCP UDP events FINS</PackageTags>
 	  <Description>
 		  This project was created to have an easy to use, .NET Standard library to communicate with Omron PLCs.
 	  </Description>
 	  <PackageLicenseFile>LICENSE</PackageLicenseFile>
 	  <PackageId>Plc.Omron.Standard</PackageId>
+	  <PackageIcon>icon.png</PackageIcon>
 	  <RepositoryUrl>https://github.com/thirstyape/PLC-Omron-Standard</RepositoryUrl>
-	  <Version>1.0.6</Version>
+	  <RepositoryType>git</RepositoryType>
+	  <Version>1.0.7</Version>
 	  <PackageReleaseNotes>
+		  1.0.7
+		  Add project icon, fix invalid XML comments in PlcOmron class
+
 		  1.0.6
 		  Update project file to generate XML documentation in NuGet package
-		  
+
 		  1.0.5
 		  Improve error messages, bugfixes
 
@@ -36,8 +41,8 @@
 		  1.0.0
 		  Initial release
 	  </PackageReleaseNotes>
-	  <AssemblyVersion>1.0.6.0</AssemblyVersion>
-	  <FileVersion>1.0.6.0</FileVersion>
+	  <AssemblyVersion>1.0.7.0</AssemblyVersion>
+	  <FileVersion>1.0.7.0</FileVersion>
 	  <GenerateDocumentationFile>true</GenerateDocumentationFile>
 	  <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
@@ -47,6 +52,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<None Include="icon.png">
+			<Pack>True</Pack>
+			<PackagePath></PackagePath>
+		</None>
 		<None Include="LICENSE">
 			<Pack>True</Pack>
 			<PackagePath></PackagePath>

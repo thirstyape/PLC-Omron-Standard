@@ -82,6 +82,9 @@ namespace PLC_Omron_Standard
 			Command.NotifyCommandError += Command_NotifyCommandError;
 		}
 
+		/// <summary>
+		/// Unsubscribes from events and disconnects from the PLC
+		/// </summary>
 		~PlcOmron()
 		{
 			Connection.NotifyReceivedData -= Connection_NotifyReceivedData;
@@ -416,7 +419,7 @@ namespace PLC_Omron_Standard
 		/// Writes the provided value to the PLC
 		/// </summary>
 		/// <param name="address">The address on the PLC to write to</param>
-		/// <param name="values">The value to write to the PLC</param>
+		/// <param name="value">The value to write to the PLC</param>
 		public bool Write(ushort address, bool value)
 		{
 			return Write(address, BitConverter.GetBytes(value).Concat(new byte[] { 0 }).Reverse().ToArray());
@@ -426,7 +429,7 @@ namespace PLC_Omron_Standard
 		/// Writes the provided value to the PLC
 		/// </summary>
 		/// <param name="address">The address on the PLC to write to</param>
-		/// <param name="values">The value to write to the PLC</param>
+		/// <param name="value">The value to write to the PLC</param>
 		public bool Write(ushort address, short value)
 		{
 			return Write(address, BitConverter.GetBytes(value).Reverse().ToArray());
@@ -436,7 +439,7 @@ namespace PLC_Omron_Standard
 		/// Writes the provided value to the PLC
 		/// </summary>
 		/// <param name="address">The address on the PLC to write to</param>
-		/// <param name="values">The value to write to the PLC</param>
+		/// <param name="value">The value to write to the PLC</param>
 		public bool Write(ushort address, ushort value)
 		{
 			return Write(address, BitConverter.GetBytes(value).Reverse().ToArray());
@@ -446,7 +449,7 @@ namespace PLC_Omron_Standard
 		/// Writes the provided value to the PLC
 		/// </summary>
 		/// <param name="address">The address on the PLC to write to</param>
-		/// <param name="values">The value to write to the PLC</param>
+		/// <param name="value">The value to write to the PLC</param>
 		/// <remarks>
 		/// Writes to the two consecutive sub-addresses at the provided start index
 		/// </remarks>
@@ -459,7 +462,7 @@ namespace PLC_Omron_Standard
 		/// Writes the provided value to the PLC
 		/// </summary>
 		/// <param name="address">The address on the PLC to write to</param>
-		/// <param name="values">The value to write to the PLC</param>
+		/// <param name="value">The value to write to the PLC</param>
 		/// <remarks>
 		/// Writes to the two consecutive sub-addresses at the provided start index
 		/// </remarks>
@@ -472,7 +475,7 @@ namespace PLC_Omron_Standard
 		/// Writes the provided value to the PLC
 		/// </summary>
 		/// <param name="address">The address on the PLC to write to</param>
-		/// <param name="values">The value to write to the PLC</param>
+		/// <param name="value">The value to write to the PLC</param>
 		/// <remarks>
 		/// Writes to the two consecutive sub-addresses at the provided start index
 		/// </remarks>
@@ -485,7 +488,7 @@ namespace PLC_Omron_Standard
 		/// Writes the provided value to the PLC
 		/// </summary>
 		/// <param name="address">The address on the PLC to write to</param>
-		/// <param name="values">The value to write to the PLC</param>
+		/// <param name="value">The value to write to the PLC</param>
 		public bool Write(ushort address, string value)
 		{
 			return Write(address, Encoding.ASCII.GetBytes(value).ToArray());
