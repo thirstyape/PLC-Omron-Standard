@@ -25,7 +25,7 @@ To use this library either clone a copy of the repository or check out the [NuGe
 
 The following example provides a basic use case for TCP based communications.
 
-```
+```csharp
 using PLC_Omron_Standard;
 
 public class MyClass() 
@@ -50,7 +50,7 @@ public class MyClass()
 
 The following example provides a basic use case for UDP based communications.
 
-```
+```csharp
 using PLC_Omron_Standard;
 
 public class MyClass() 
@@ -81,7 +81,7 @@ public class MyClass()
 
 The following example provides a use case where events are subscribed to and handled.
 
-```
+```csharp
 using PLC_Omron_Standard;
 
 public class MyClass() 
