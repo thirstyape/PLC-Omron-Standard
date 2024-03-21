@@ -6,17 +6,20 @@
 	  <Company>NF Software Inc.</Company>
 	  <Authors>NF Software Inc.</Authors>
 	  <Copyright>Copyright 2023 $(Company)</Copyright>
+	  <Version>1.0.8</Version>
+	  <AssemblyVersion>1.0.8.0</AssemblyVersion>
+	  <FileVersion>1.0.8.0</FileVersion>
+	  <PackageId>Plc.Omron.Standard</PackageId>
 	  <PackageTags>plc omron communication TCP UDP events FINS</PackageTags>
+	  <RepositoryUrl>https://github.com/thirstyape/PLC-Omron-Standard</RepositoryUrl>
+	  <PackageProjectUrl>https://github.com/thirstyape/PLC-Omron-Standard</PackageProjectUrl>
 	  <Description>
 		  This project was created to have an easy to use, .NET Standard library to communicate with Omron PLCs.
 	  </Description>
-	  <PackageLicenseFile>LICENSE</PackageLicenseFile>
-	  <PackageId>Plc.Omron.Standard</PackageId>
-	  <PackageIcon>icon.png</PackageIcon>
-	  <RepositoryUrl>https://github.com/thirstyape/PLC-Omron-Standard</RepositoryUrl>
-	  <RepositoryType>git</RepositoryType>
-	  <Version>1.0.7</Version>
 	  <PackageReleaseNotes>
+		  1.0.8
+		  Update publishing to include source link, deterministic, and compiler flags
+		  
 		  1.0.7
 		  Add project icon, fix invalid XML comments in PlcOmron class
 
@@ -41,15 +44,24 @@
 		  1.0.0
 		  Initial release
 	  </PackageReleaseNotes>
-	  <AssemblyVersion>1.0.7.0</AssemblyVersion>
-	  <FileVersion>1.0.7.0</FileVersion>
-	  <GenerateDocumentationFile>true</GenerateDocumentationFile>
-	  <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
-	<PropertyGroup>
-		<DocumentationFile>$(ProjectDir)Plc-Omron-Standard.xml</DocumentationFile>
+	<PropertyGroup Condition="'$(Configuration)' == 'Release'">
+		<DocumentationFile>$(ProjectDir)$(AssemblyName).xml</DocumentationFile>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageLicenseFile>LICENSE</PackageLicenseFile>
+		<PackageIcon>icon.png</PackageIcon>
+		<RepositoryType>git</RepositoryType>
+		<AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+		<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 	</PropertyGroup>
+
+	<ItemGroup Condition="'$(Configuration)' == 'Release'">
+		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.*" PrivateAssets="All"/>
+	</ItemGroup>
 
 	<ItemGroup>
 		<None Include="icon.png">
